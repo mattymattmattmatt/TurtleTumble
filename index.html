@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Turtle Tumble</title>
+  
+  <!-- Importing Retro Font from Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -12,21 +16,25 @@
     <div id="background"></div> <!-- Background Image -->
     <div id="island"></div> <!-- Island Image -->
 
+    <!-- Game Title -->
+    <div id="game-title">Turtle Tumble</div>
+
     <!-- Password Entry -->
     <div id="password-container">
-      <h2>Turtle Tumble</h2>
-      <div>
-        <button id="create-game-button">Create Game</button>
-        <button id="join-game-button">Join Game</button>
-      </div>
-      <div id="password-input-container" style="display:none; margin-top: 10px;">
-        <input type="text" id="password" placeholder="Enter password" />
-        <button id="submit-password-button">Submit</button>
-      </div>
+      <h2 id="password-title">Create a Game</h2>
+      <input type="text" id="password" placeholder="Enter a unique password" />
+      <button id="create-button">Create Game</button>
+    </div>
+
+    <!-- Join Game -->
+    <div id="join-container" style="display:none;">
+      <h2>Join a Game</h2>
+      <input type="text" id="join-password" placeholder="Enter host's password" />
+      <button id="join-button">Join Game</button>
     </div>
 
     <!-- Waiting for other player -->
-    <div id="waiting-message" style="display:none;">Waiting for other player to join...</div>
+    <div id="waiting-message" style="display:none;">Waiting for the other player to join...</div>
 
     <!-- Start Game Button -->
     <div id="start-button-container" style="display:none;">
@@ -50,7 +58,6 @@
     <div id="disconnect-button-container" style="display:none;">
       <button id="disconnect-button">Disconnect</button>
     </div>
-
   </div>
 
   <!-- Firebase SDKs -->
