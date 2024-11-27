@@ -3,14 +3,14 @@ import { getDatabase, ref, set, onValue, update, get, child, onDisconnect, remov
 
 // Firebase Configuration
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY", // Replace with your Firebase API key
-  authDomain: "YOUR_AUTH_DOMAIN", // Replace with your Firebase Auth domain
-  databaseURL: "YOUR_DATABASE_URL", // Replace with your Firebase Database URL
-  projectId: "YOUR_PROJECT_ID", // Replace with your Firebase Project ID
-  storageBucket: "YOUR_STORAGE_BUCKET", // Replace with your Firebase Storage Bucket
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID", // Replace with your Firebase Messaging Sender ID
-  appId: "YOUR_APP_ID", // Replace with your Firebase App ID
-  measurementId: "YOUR_MEASUREMENT_ID" // Replace with your Firebase Measurement ID
+  apiKey: "AIzaSyDosCzACTepSkaY1dPYSgcsbmvT5hIB-Cw",
+  authDomain: "turtle-tumble.firebaseapp.com",
+  databaseURL: "https://turtle-tumble-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "turtle-tumble",
+  storageBucket: "turtle-tumble.firebasestorage.app",
+  messagingSenderId: "1075675901561",
+  appId: "1:1075675901561:web:5187df14444549117faea8",
+  measurementId: "G-PJ1B80451T"
 };
 
 // Initialize Firebase
