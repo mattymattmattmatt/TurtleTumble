@@ -50,7 +50,7 @@ body {
   height: 400px;
   background-image: url('../images/island.png');
   background-size: contain;
-  z-index: 0;
+  z-index: 1;
   border-radius: 50%; /* Circular island */
   top: 50%;
   left: 50%;
@@ -66,14 +66,14 @@ body {
   width: 100%;
   text-align: center;
   font-size: 18px; /* Reduced font size */
-  z-index: 2;
+  z-index: 4; /* Ensure it appears above all other elements */
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
 }
 
 /* Control Instructions */
 #control-instructions {
   position: absolute;
-  bottom: 50px;
+  bottom: 70px; /* Adjusted to be above the disconnect button */
   left: 50%;
   transform: translateX(-50%);
   background-color: rgba(0, 0, 0, 0.6);
@@ -82,7 +82,7 @@ body {
   font-size: 12px;
   text-align: center;
   color: white;
-  z-index: 2;
+  z-index: 3; /* Ensure it appears above turtles */
   font-family: 'Press Start 2P', cursive;
 }
 
@@ -93,6 +93,7 @@ body {
   left: 50%;
   transform: translate(-50%, -50%);
   text-align: center;
+  z-index: 3; /* Ensure it appears above turtles */
 }
 
 #main-menu button {
@@ -120,6 +121,7 @@ body {
   left: 50%;
   transform: translateX(-50%);
   text-align: center;
+  z-index: 3; /* Ensure it appears above turtles */
 }
 
 #password-container {
@@ -168,6 +170,7 @@ body {
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
+  z-index: 3; /* Ensure it appears above turtles */
 }
 
 /* Waiting for players */
@@ -177,20 +180,22 @@ body {
   text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
   font-weight: bold;
   position: absolute;
-  top: 65%;
+  top: 70%;
   left: 50%;
   transform: translate(-50%, -50%);
   display: none;
   text-align: center;
+  z-index: 3; /* Ensure it appears above turtles */
 }
 
 /* Start Game Button Container */
 #start-button-container {
   position: absolute;
-  top: 50%; /* Center vertically */
+  top: 60%; /* Adjusted to be below the island */
   left: 50%; /* Center horizontally */
   transform: translate(-50%, -50%); /* Centering */
   display: none;
+  z-index: 3; /* Ensure it appears above turtles */
 }
 
 /* Score and Timer */
@@ -199,7 +204,7 @@ body {
   text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
   position: absolute;
   top: 10px;
-  z-index: 1;
+  z-index: 4; /* Ensure they appear above all elements */
   padding: 5px 10px;
   background-color: rgba(0, 0, 0, 0.6);
   border-radius: 10px;
@@ -224,6 +229,7 @@ body {
   background-image: url('../images/shark.png');
   background-size: contain;
   animation: swim 5s linear infinite;
+  z-index: 1; /* Ensure sharks are below turtles */
 }
 
 /* Animation for sharks swimming */
@@ -239,22 +245,20 @@ body {
 /* Turtle Shells (Players) */
 .turtle {
   position: absolute;
-  width: 32px;  /* 60% smaller than the original size */
-  height: 32px; /* 60% smaller than the original size */
+  width: 32px;  /* Adjust as needed */
+  height: 32px; /* Adjust as needed */
   background-size: contain;
   background-repeat: no-repeat;
   transition: all 0.1s ease-in-out; /* Smooth transition for movements */
-  z-index: 1; /* Ensure turtles appear above the island but below control instructions */
+  z-index: 2; /* Ensure turtles appear above the island */
 }
 
 #player1 {
   background-image: url('../images/player1_shell.png'); /* Player 1 shell image */
-  /* Initial position set via JavaScript */
 }
 
 #player2 {
   background-image: url('../images/player2_shell.png'); /* Player 2 shell image */
-  /* Initial position set via JavaScript */
 }
 
 /* Responsive Design */
@@ -295,7 +299,7 @@ body {
   }
 
   #waiting-message {
-    top: 70%;
+    top: 75%;
     font-size: 12px; /* Further reduced font size */
   }
 

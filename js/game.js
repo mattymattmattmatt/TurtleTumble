@@ -13,6 +13,7 @@ const firebaseConfig = {
   measurementId: "G-PJ1B80451T"
 };
 
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -58,7 +59,8 @@ const keysPressed = {
 };
 
 // Define movement speed
-const keyboardSpeed = 0.1; // Adjust as needed for desired speed
+const keyboardSpeed = 0.05; // Reduced from 0.1 for less sensitivity
+const accelerationFactor = 0.02; // Reduced from 0.05 for gyroscope sensitivity
 
 // Wait for the DOM to load
 document.addEventListener('DOMContentLoaded', () => {
@@ -280,6 +282,35 @@ function listenForGameStart() {
       timerDisplay.style.display = 'block';
       disconnectButtonContainer.style.display = 'block';
       gameStarted = true;
+      
+      // Start listening for player movements
+      listenForPlayerMovements();
+    }
+  });
+}
+
+// Function to Listen for Player Movements
+function listenForPlayerMovements() {
+  const player1Ref = ref(db, `games/${gamePassword}/player1`);
+  const player2Ref = ref(db, `games/${gamePassword}/player2`);
+
+  // Listen for Player 1's movements
+  onValue(player1Ref, (snapshot) => {
+    const data = snapshot.val();
+    if (data && playerId !== 'player1') { // Ensure not to update own position
+      const player1Element = document.getElementById('player1');
+      player1Element.style.left = `${data.x}px`;
+      player1Element.style.top = `${data.y}px`;
+    }
+  });
+
+  // Listen for Player 2's movements
+  onValue(player2Ref, (snapshot) => {
+    const data = snapshot.val();
+    if (data && playerId !== 'player2') { // Ensure not to update own position
+      const player2Element = document.getElementById('player2');
+      player2Element.style.left = `${data.x}px`;
+      player2Element.style.top = `${data.y}px`;
     }
   });
 }
@@ -293,11 +324,11 @@ function initializePlayerPosition(player) {
   const gameRect = game.getBoundingClientRect();
   const islandRect = island.getBoundingClientRect();
   
-  const islandCenterX = (gameRect.width / 2) - (islandRect.left - gameRect.left) - (islandRect.width / 2);
-  const islandCenterY = (gameRect.height / 2) - (islandRect.top - gameRect.top) - (islandRect.height / 2);
+  const islandCenterX = (gameRect.width / 2) - (islandRect.width / 2);
+  const islandCenterY = (gameRect.height / 2) - (islandRect.height / 2);
   
   // Define predefined positions relative to the island's center
-  const offsetDistance = 60; // Distance from the center to position the turtles
+  const offsetDistance = 80; // Increased distance for better spacing
   let initialX, initialY;
   
   if (player === 'player1') {
@@ -359,32 +390,16 @@ function startGame() {
     return;
   }
 
-  // Re-initialize positions to ensure they are on the island
-  initializePlayerPosition('player1');
-  initializePlayerPosition('player2');
-
-  // Retrieve updated positions after re-initialization
-  const newP1x = parseFloat(player1Element.style.left);
-  const newP1y = parseFloat(player1Element.style.top);
-  const newP2x = parseFloat(player2Element.style.left);
-  const newP2y = parseFloat(player2Element.style.top);
-
-  // Final validation
-  if (isNaN(newP1x) || isNaN(newP1y) || isNaN(newP2x) || isNaN(newP2y)) {
-    alert("Failed to position players correctly. Please try reconnecting.");
-    return;
-  }
-
   // Update game state to started
   set(gameRef, {
     player1: {
-      x: newP1x,
-      y: newP1y,
+      x: p1x,
+      y: p1y,
       ready: true
     },
     player2: {
-      x: newP2x,
-      y: newP2y,
+      x: p2x,
+      y: p2y,
       ready: true
     },
     score: {
@@ -403,6 +418,9 @@ function startGame() {
     // Start the timer
     startTimer();
     gameStarted = true;
+    
+    // Start listening for player movements
+    listenForPlayerMovements();
   }).catch((error) => {
     console.error(error);
   });
@@ -521,7 +539,7 @@ window.addEventListener('deviceorientation', function(event) {
   const gamma = event.gamma; // Left/right tilt (Y-axis)
 
   // Define acceleration based on tilt
-  const accelerationFactor = 0.05; // Adjust for sensitivity
+  // Reduced accelerationFactor for less sensitivity
   const maxTilt = 30; // Maximum tilt angle
 
   // Calculate acceleration
@@ -548,8 +566,8 @@ window.addEventListener('deviceorientation', function(event) {
   let currentX = parseFloat(playerElement.style.left);
   let currentY = parseFloat(playerElement.style.top);
 
-  let newX = currentX + velocity[playerId].x * 50; // Multiply for noticeable movement
-  let newY = currentY + velocity[playerId].y * 50;
+  let newX = currentX + velocity[playerId].x * 30; // Reduced multiplier for slower movement
+  let newY = currentY + velocity[playerId].y * 30; // Reduced multiplier for slower movement
 
   // Boundary checks relative to the game container
   const gameRect = document.getElementById('game').getBoundingClientRect();
@@ -602,8 +620,8 @@ function handleKeyboardControls() {
   let currentX = parseFloat(playerElement.style.left);
   let currentY = parseFloat(playerElement.style.top);
 
-  let newX = currentX + velocity[playerId].x * 50; // Multiply for noticeable movement
-  let newY = currentY + velocity[playerId].y * 50;
+  let newX = currentX + velocity[playerId].x * 30; // Reduced multiplier for slower movement
+  let newY = currentY + velocity[playerId].y * 30; // Reduced multiplier for slower movement
 
   // Boundary checks relative to the game container
   const gameRect = document.getElementById('game').getBoundingClientRect();
@@ -745,15 +763,15 @@ function knockOff(player) {
 
     let newX, newY;
     if (player === 'player1') {
-      newX = islandCenterX - 60; // Position Player 1 to the left
+      newX = islandCenterX - 80; // Position Player 1 to the left
       newY = islandCenterY;
     } else {
-      newX = islandCenterX + 60; // Position Player 2 to the right
+      newX = islandCenterX + 80; // Position Player 2 to the right
       newY = islandCenterY;
     }
 
     // Ensure positions are numerical and not NaN
-    newX = isNaN(newX) ? (gameRect.width / 2 - 60) : newX;
+    newX = isNaN(newX) ? (gameRect.width / 2 - 80) : newX;
     newY = isNaN(newY) ? (gameRect.height / 2) : newY;
 
     playerElement.style.left = `${newX}px`;
