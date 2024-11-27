@@ -245,8 +245,8 @@ body {
 /* Turtle Shells (Players) */
 .turtle {
   position: absolute;
-  width: 32px;  /* Adjust as needed */
-  height: 32px; /* Adjust as needed */
+  width: 38px;  /* Increased from 32px by 20% */
+  height: 38px; /* Increased from 32px by 20% */
   background-size: contain;
   background-repeat: no-repeat;
   transition: all 0.1s ease-in-out; /* Smooth transition for movements */
@@ -254,11 +254,11 @@ body {
 }
 
 #player1 {
-  background-image: url('../images/player1_shell.png'); /* Player 1 shell image */
+  background-image: url('../images/player1_shell.png'); /* Ensure high-res image */
 }
 
 #player2 {
-  background-image: url('../images/player2_shell.png'); /* Player 2 shell image */
+  background-image: url('../images/player2_shell.png'); /* Ensure high-res image */
 }
 
 /* Responsive Design */
@@ -274,8 +274,8 @@ body {
   }
 
   .turtle {
-    width: 20px; /* 60% smaller */
-    height: 20px; /* 60% smaller */
+    width: 45.6px; /* 38px + 20% */
+    height: 45.6px; /* 38px + 20% */
   }
 
   #score, #timer {

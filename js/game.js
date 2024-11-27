@@ -13,7 +13,6 @@ const firebaseConfig = {
   measurementId: "G-PJ1B80451T"
 };
 
-
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -59,8 +58,8 @@ const keysPressed = {
 };
 
 // Define movement speed
-const keyboardSpeed = 0.05; // Reduced from 0.1 for less sensitivity
-const accelerationFactor = 0.02; // Reduced from 0.05 for gyroscope sensitivity
+const keyboardSpeed = 0.03; // Further reduced for less sensitivity
+const accelerationFactor = 0.015; // Further reduced for gyroscope sensitivity
 
 // Wait for the DOM to load
 document.addEventListener('DOMContentLoaded', () => {
@@ -539,7 +538,7 @@ window.addEventListener('deviceorientation', function(event) {
   const gamma = event.gamma; // Left/right tilt (Y-axis)
 
   // Define acceleration based on tilt
-  // Reduced accelerationFactor for less sensitivity
+  // Further reduced accelerationFactor for even less sensitivity
   const maxTilt = 30; // Maximum tilt angle
 
   // Calculate acceleration
@@ -561,13 +560,13 @@ window.addEventListener('deviceorientation', function(event) {
   velocity[playerId].x *= friction;
   velocity[playerId].y *= friction;
 
-  // Update position
+  // Update position with reduced multiplier for slower movement
   let playerElement = document.getElementById(playerId);
   let currentX = parseFloat(playerElement.style.left);
   let currentY = parseFloat(playerElement.style.top);
 
-  let newX = currentX + velocity[playerId].x * 30; // Reduced multiplier for slower movement
-  let newY = currentY + velocity[playerId].y * 30; // Reduced multiplier for slower movement
+  let newX = currentX + velocity[playerId].x * 25; // Reduced from 30
+  let newY = currentY + velocity[playerId].y * 25; // Reduced from 30
 
   // Boundary checks relative to the game container
   const gameRect = document.getElementById('game').getBoundingClientRect();
@@ -615,13 +614,13 @@ function handleKeyboardControls() {
   velocity[playerId].x *= friction;
   velocity[playerId].y *= friction;
 
-  // Update position
+  // Update position with reduced multiplier for slower movement
   let playerElement = document.getElementById(playerId);
   let currentX = parseFloat(playerElement.style.left);
   let currentY = parseFloat(playerElement.style.top);
 
-  let newX = currentX + velocity[playerId].x * 30; // Reduced multiplier for slower movement
-  let newY = currentY + velocity[playerId].y * 30; // Reduced multiplier for slower movement
+  let newX = currentX + velocity[playerId].x * 25; // Reduced from 30
+  let newY = currentY + velocity[playerId].y * 25; // Reduced from 30
 
   // Boundary checks relative to the game container
   const gameRect = document.getElementById('game').getBoundingClientRect();
@@ -664,50 +663,71 @@ function detectCollision() {
   const rect1 = player1.getBoundingClientRect();
   const rect2 = player2.getBoundingClientRect();
 
-  if (rect1.left < rect2.left + rect2.width &&
-      rect1.left + rect1.width > rect2.left &&
-      rect1.top < rect2.top + rect2.height &&
-      rect1.top + rect1.height > rect2.top) {
-    // Simple elastic collision response
-    const overlapX = (rect1.left + rect1.width / 2) - (rect2.left + rect2.width / 2);
-    const overlapY = (rect1.top + rect1.height / 2) - (rect2.top + rect2.height / 2);
-    const distance = Math.sqrt(overlapX * overlapX + overlapY * overlapY) || 1;
+  // Calculate the centers of both turtles
+  const center1 = {
+    x: rect1.left + rect1.width / 2,
+    y: rect1.top + rect1.height / 2
+  };
+  const center2 = {
+    x: rect2.left + rect2.width / 2,
+    y: rect2.top + rect2.height / 2
+  };
 
-    const minimumDistance = (rect1.width / 2) + (rect2.width / 2);
+  // Calculate the distance between the centers
+  const dx = center1.x - center2.x;
+  const dy = center1.y - center2.y;
+  const distance = Math.sqrt(dx * dx + dy * dy);
 
-    if (distance < minimumDistance) {
-      const angle = Math.atan2(overlapY, overlapX);
-      const moveDistance = (minimumDistance - distance) / 2;
+  // Calculate the minimum distance to avoid overlap
+  const minDistance = (rect1.width + rect2.width) / 2;
 
-      // Move player1
-      let newX1 = parseFloat(player1.style.left) + Math.cos(angle) * moveDistance;
-      let newY1 = parseFloat(player1.style.top) + Math.sin(angle) * moveDistance;
+  if (distance < minDistance) {
+    // Calculate the angle of collision
+    const angle = Math.atan2(dy, dx);
 
-      // Move player2
-      let newX2 = parseFloat(player2.style.left) - Math.cos(angle) * moveDistance;
-      let newY2 = parseFloat(player2.style.top) - Math.sin(angle) * moveDistance;
+    // Calculate overlap
+    const overlap = minDistance - distance;
 
-      // Boundary checks relative to the game container
-      newX1 = Math.max(0, Math.min(newX1, gameRect.width - player1.offsetWidth));
-      newY1 = Math.max(0, Math.min(newY1, gameRect.height - player1.offsetHeight));
-      newX2 = Math.max(0, Math.min(newX2, gameRect.width - player2.offsetWidth));
-      newY2 = Math.max(0, Math.min(newY2, gameRect.height - player2.offsetHeight));
+    // Calculate displacement for each turtle
+    const displacementX = Math.cos(angle) * (overlap / 2);
+    const displacementY = Math.sin(angle) * (overlap / 2);
 
-      player1.style.left = `${newX1}px`;
-      player1.style.top = `${newY1}px`;
-      player2.style.left = `${newX2}px`;
-      player2.style.top = `${newY2}px`;
+    // Update positions to resolve overlap
+    let newX1 = parseFloat(player1.style.left) + displacementX;
+    let newY1 = parseFloat(player1.style.top) + displacementY;
+    let newX2 = parseFloat(player2.style.left) - displacementX;
+    let newY2 = parseFloat(player2.style.top) - displacementY;
 
-      // Update Firebase with new positions
-      update(ref(db, `games/${gamePassword}/player1`), {
-        x: newX1,
-        y: newY1
-      });
-      update(ref(db, `games/${gamePassword}/player2`), {
-        x: newX2,
-        y: newY2
-      });
-    }
+    // Boundary checks relative to the game container
+    const gameRect = document.getElementById('game').getBoundingClientRect();
+    newX1 = Math.max(0, Math.min(newX1, gameRect.width - player1.offsetWidth));
+    newY1 = Math.max(0, Math.min(newY1, gameRect.height - player1.offsetHeight));
+    newX2 = Math.max(0, Math.min(newX2, gameRect.width - player2.offsetWidth));
+    newY2 = Math.max(0, Math.min(newY2, gameRect.height - player2.offsetHeight));
+
+    // Update positions
+    player1.style.left = `${newX1}px`;
+    player1.style.top = `${newY1}px`;
+    player2.style.left = `${newX2}px`;
+    player2.style.top = `${newY2}px`;
+
+    // Update Firebase with new positions
+    update(ref(db, `games/${gamePassword}/player1`), {
+      x: newX1,
+      y: newY1
+    });
+    update(ref(db, `games/${gamePassword}/player2`), {
+      x: newX2,
+      y: newY2
+    });
+
+    // Adjust velocities for a bouncing effect
+    const tempVx = velocity.player1.x;
+    const tempVy = velocity.player1.y;
+    velocity.player1.x = velocity.player2.x * 0.8; // Apply damping factor
+    velocity.player1.y = velocity.player2.y * 0.8;
+    velocity.player2.x = tempVx * 0.8;
+    velocity.player2.y = tempVy * 0.8;
   }
 }
 
@@ -724,7 +744,7 @@ function isKnockedOff(x, y) {
   const distance = Math.sqrt(Math.pow(x - islandCenterX, 2) + Math.pow(y - islandCenterY, 2));
 
   // Radius of the island minus half the turtle size to ensure full shell is on the island
-  const islandRadius = islandRect.width / 2 - 16; // 32px turtle shell, half is 16px
+  const islandRadius = islandRect.width / 2 - 19; // 38px turtle shell, half is 19px
 
   // If distance is greater than radius, player is off the island
   return distance > islandRadius;
@@ -748,14 +768,14 @@ function knockOff(player) {
   // Shrink the turtle shell to simulate falling
   const playerElement = document.getElementById(player);
   playerElement.style.transition = 'transform 0.5s ease-in-out';
-  playerElement.style.transform = 'scale(0.5)';
+  playerElement.style.transform = 'scale(0.8)'; // Slightly less shrink for better visibility
 
   // Remove from game for 2 seconds
   setTimeout(() => {
     // Respawn the turtle shell
     playerElement.style.transform = 'scale(1)';
 
-    // Reset position to island center
+    // Reset position to island center with offset
     const game = document.getElementById('game');
     const gameRect = game.getBoundingClientRect();
     const islandCenterX = gameRect.width / 2;
