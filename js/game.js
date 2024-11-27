@@ -216,6 +216,9 @@ function listenForPlayer2() {
       waitingMessage.textContent = "Player 2 has joined! Click 'Start Game' to begin.";
       // Show the Start Game button
       startButton.parentElement.style.display = 'block';
+      
+      // Initialize Player 2's Position
+      initializePlayerPosition('player2');
     }
   });
 }
@@ -284,31 +287,35 @@ function listenForGameStart() {
 // Function to Initialize Player Position on the Island
 function initializePlayerPosition(player) {
   const island = document.getElementById('island');
-  const islandRect = island.getBoundingClientRect();
-  const gameRect = document.getElementById('game').getBoundingClientRect();
-
+  const game = document.getElementById('game');
+  
   // Calculate the island's center relative to the game container
-  const islandCenterX = (gameRect.width / 2) - (player === 'player1' ? 60 : -60); // Offset for Player 1 and Player 2
-  const islandCenterY = gameRect.height / 2;
-
-  // Set initial positions based on the player
+  const gameRect = game.getBoundingClientRect();
+  const islandRect = island.getBoundingClientRect();
+  
+  const islandCenterX = (gameRect.width / 2) - (islandRect.left - gameRect.left) - (islandRect.width / 2);
+  const islandCenterY = (gameRect.height / 2) - (islandRect.top - gameRect.top) - (islandRect.height / 2);
+  
+  // Define predefined positions relative to the island's center
+  const offsetDistance = 60; // Distance from the center to position the turtles
   let initialX, initialY;
+  
   if (player === 'player1') {
-    initialX = islandCenterX - 60; // Position Player 1 to the left
+    initialX = islandCenterX - offsetDistance; // Position Player 1 to the left
     initialY = islandCenterY;
-  } else {
-    initialX = islandCenterX + 60; // Position Player 2 to the right
+  } else if (player === 'player2') {
+    initialX = islandCenterX + offsetDistance; // Position Player 2 to the right
     initialY = islandCenterY;
   }
-
+  
   // Ensure positions are numerical and not NaN
-  initialX = isNaN(initialX) ? gameRect.width / 2 - 60 : initialX;
-  initialY = isNaN(initialY) ? gameRect.height / 2 : initialY;
-
+  initialX = isNaN(initialX) ? (gameRect.width / 2 - offsetDistance) : initialX;
+  initialY = isNaN(initialY) ? (gameRect.height / 2) : initialY;
+  
   const playerElement = document.getElementById(player);
   playerElement.style.left = `${initialX}px`;
   playerElement.style.top = `${initialY}px`;
-
+  
   // Update Firebase with initial position
   update(ref(db, `games/${gamePassword}/${player}`), {
     x: initialX,
@@ -323,7 +330,7 @@ function initializePlayerPosition(player) {
       waitingMessage.textContent = "Waiting for the host to start the game...";
     }
   });
-
+  
   // Hide join/create containers and show waiting message
   passwordContainer.style.display = 'none';
   joinContainer.style.display = 'none';
@@ -352,16 +359,32 @@ function startGame() {
     return;
   }
 
+  // Re-initialize positions to ensure they are on the island
+  initializePlayerPosition('player1');
+  initializePlayerPosition('player2');
+
+  // Retrieve updated positions after re-initialization
+  const newP1x = parseFloat(player1Element.style.left);
+  const newP1y = parseFloat(player1Element.style.top);
+  const newP2x = parseFloat(player2Element.style.left);
+  const newP2y = parseFloat(player2Element.style.top);
+
+  // Final validation
+  if (isNaN(newP1x) || isNaN(newP1y) || isNaN(newP2x) || isNaN(newP2y)) {
+    alert("Failed to position players correctly. Please try reconnecting.");
+    return;
+  }
+
   // Update game state to started
   set(gameRef, {
     player1: {
-      x: p1x,
-      y: p1y,
+      x: newP1x,
+      y: newP1y,
       ready: true
     },
     player2: {
-      x: p2x,
-      y: p2y,
+      x: newP2x,
+      y: newP2y,
       ready: true
     },
     score: {
@@ -673,8 +696,9 @@ function detectCollision() {
 // Function to Check if Player is Knocked Off the Island
 function isKnockedOff(x, y) {
   const island = document.getElementById('island');
+  const game = document.getElementById('game');
+  const gameRect = game.getBoundingClientRect();
   const islandRect = island.getBoundingClientRect();
-  const gameRect = document.getElementById('game').getBoundingClientRect();
 
   // Calculate distance from island center
   const islandCenterX = gameRect.width / 2;
@@ -714,8 +738,8 @@ function knockOff(player) {
     playerElement.style.transform = 'scale(1)';
 
     // Reset position to island center
-    const island = document.getElementById('island');
-    const gameRect = document.getElementById('game').getBoundingClientRect();
+    const game = document.getElementById('game');
+    const gameRect = game.getBoundingClientRect();
     const islandCenterX = gameRect.width / 2;
     const islandCenterY = gameRect.height / 2;
 
@@ -729,8 +753,8 @@ function knockOff(player) {
     }
 
     // Ensure positions are numerical and not NaN
-    newX = isNaN(newX) ? gameRect.width / 2 - 60 : newX;
-    newY = isNaN(newY) ? gameRect.height / 2 : newY;
+    newX = isNaN(newX) ? (gameRect.width / 2 - 60) : newX;
+    newY = isNaN(newY) ? (gameRect.height / 2) : newY;
 
     playerElement.style.left = `${newX}px`;
     playerElement.style.top = `${newY}px`;
