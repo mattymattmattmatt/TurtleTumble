@@ -203,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
           waitingMessage.textContent = "Waiting for the host to start the game...";
           gameTitle.textContent = "Turtle Tumble - Player 2";
 
-          // Optionally, listen for game start
+          // Listen for game start
           listenForGameStart();
         }
       }
@@ -212,7 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Function to Listen for Game Start
+  // Function to Listen for Game Start (Player 2 Side)
   function listenForGameStart() {
     const startedRef = ref(db, `games/${gamePassword}/started`);
     onValue(startedRef, (snapshot) => {
@@ -243,10 +243,18 @@ document.addEventListener('DOMContentLoaded', () => {
     playerElement.style.left = `${islandCenterX + offset}px`;
     playerElement.style.top = `${islandCenterY}px`;
 
+    // Ensure positions are set correctly
+    const parsedX = parseFloat(playerElement.style.left);
+    const parsedY = parseFloat(playerElement.style.top);
+
+    // Fallback to 0 if parsing fails
+    const finalX = isNaN(parsedX) ? 0 : parsedX;
+    const finalY = isNaN(parsedY) ? 0 : parsedY;
+
     // Update Firebase with initial position
     update(ref(db, `games/${gamePassword}/${player}`), {
-      x: islandCenterX + offset,
-      y: islandCenterY
+      x: finalX,
+      y: finalY
     }).then(() => {
       // Show waiting message
       if (playerId === 'player1') {
@@ -276,16 +284,31 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    // Retrieve player positions
+    const player1Element = document.getElementById('player1');
+    const player2Element = document.getElementById('player2');
+
+    const p1x = parseFloat(player1Element.style.left);
+    const p1y = parseFloat(player1Element.style.top);
+    const p2x = parseFloat(player2Element.style.left);
+    const p2y = parseFloat(player2Element.style.top);
+
+    // Validate positions
+    if (isNaN(p1x) || isNaN(p1y) || isNaN(p2x) || isNaN(p2y)) {
+      alert("Invalid player positions. Please ensure both players are positioned correctly.");
+      return;
+    }
+
     // Update game state to started
     set(gameRef, {
       player1: {
-        x: parseFloat(document.getElementById('player1').style.left),
-        y: parseFloat(document.getElementById('player1').style.top),
+        x: p1x,
+        y: p1y,
         ready: true
       },
       player2: {
-        x: parseFloat(document.getElementById('player2').style.left),
-        y: parseFloat(document.getElementById('player2').style.top),
+        x: p2x,
+        y: p2y,
         ready: true
       },
       score: {
@@ -597,5 +620,4 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }, 2000); // 2 seconds delay
   }
-
 });
