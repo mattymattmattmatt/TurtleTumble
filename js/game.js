@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-import { getDatabase, ref, set, onValue, update, get, child } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+import { getDatabase, ref, set, onValue, update, get, child, onDisconnect } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -33,19 +33,22 @@ window.addEventListener('DOMContentLoaded', (event) => {
   // Set up the event listener for the "Start Game" button
   document.getElementById('start-game-button').addEventListener('click', startGame);
   
-  // Listen for changes in the game state
+  // Set up the event listener for the "Reset Game" button (optional)
+  document.getElementById('reset-game-button').addEventListener('click', resetGame);
+  
+  // Listen for changes in the game state to update positions and scores
   onValue(gameRef, (snapshot) => {
     const data = snapshot.val();
     if (!data) return;
     
     // Update positions
-    if (data.player1) {
+    if (data.player1 && data.player1.x !== undefined && data.player1.y !== undefined) {
       const player1 = document.getElementById('player1');
       player1.style.left = `${data.player1.x}px`;
       player1.style.top = `${data.player1.y}px`;
     }
     
-    if (data.player2) {
+    if (data.player2 && data.player2.x !== undefined && data.player2.y !== undefined) {
       const player2 = document.getElementById('player2');
       player2.style.left = `${data.player2.x}px`;
       player2.style.top = `${data.player2.y}px`;
@@ -54,6 +57,27 @@ window.addEventListener('DOMContentLoaded', (event) => {
     // Update scores
     if (data.score) {
       document.getElementById('score').textContent = `Score: Player 1 - ${data.score.player1}, Player 2 - ${data.score.player2}`;
+    }
+
+    // If the game has started and timer is running
+    if (data.started && !gameStarted) {
+      gameStarted = true;
+      document.getElementById('start-button-container').style.display = 'none';
+      document.getElementById('score').style.display = 'block';
+      document.getElementById('timer').style.display = 'block';
+      startTimer(data.timer);
+    }
+
+    // Check if any player has disconnected
+    if (gameStarted) {
+      if (!data.player1 && playerId === 'player1') {
+        alert('Player 1 has disconnected.');
+        resetGame();
+      }
+      if (!data.player2 && playerId === 'player2') {
+        alert('Player 2 has disconnected.');
+        resetGame();
+      }
     }
   });
 });
@@ -74,21 +98,31 @@ function assignPlayer() {
   get(child(gameRef, 'player1')).then((snapshot) => {
     if (!snapshot.exists()) {
       playerId = 'player1';
-      set(ref(db, 'games/gameId/player1'), {
+      const player1Ref = ref(db, 'games/gameId/player1');
+      set(player1Ref, {
         x: 0,
         y: 0,
         ready: false
       });
+
+      // Set up onDisconnect to remove player1 data when disconnected
+      onDisconnect(player1Ref).remove();
+
       initializePlayerPosition('player1');
     } else {
       get(child(gameRef, 'player2')).then((snapshot2) => {
         if (!snapshot2.exists()) {
           playerId = 'player2';
-          set(ref(db, 'games/gameId/player2'), {
+          const player2Ref = ref(db, 'games/gameId/player2');
+          set(player2Ref, {
             x: 0,
             y: 0,
             ready: false
           });
+
+          // Set up onDisconnect to remove player2 data when disconnected
+          onDisconnect(player2Ref).remove();
+
           initializePlayerPosition('player2');
         } else {
           alert("Game is full. Please try again later.");
@@ -175,8 +209,8 @@ function startGame() {
 }
 
 // Timer countdown
-function startTimer() {
-  let timeLeft = 120; // 2 minutes
+function startTimer(initialTime = 120) {
+  let timeLeft = initialTime;
   const timerElement = document.getElementById('timer');
   
   const interval = setInterval(() => {
@@ -208,9 +242,47 @@ function endGame() {
         alert('It\'s a tie!');
       }
     }
+    // Show the Reset button (optional)
+    document.getElementById('reset-button-container').style.display = 'flex';
+    // Reset game state
+    resetGame();
   }).catch((error) => {
     console.error(error);
   });
+}
+
+// Reset game state in Firebase
+function resetGame() {
+  set(gameRef, {
+    player1: {
+      x: 0,
+      y: 0,
+      ready: false
+    },
+    player2: {
+      x: 0,
+      y: 0,
+      ready: false
+    },
+    score: {
+      player1: 0,
+      player2: 0
+    },
+    timer: 120,
+    started: false
+  });
+
+  // Reset local variables
+  gameStarted = false;
+  player1Falls = 0;
+  player2Falls = 0;
+
+  // Reset positions on the island
+  initializePlayerPosition('player1');
+  initializePlayerPosition('player2');
+
+  // Hide Reset button (optional)
+  document.getElementById('reset-button-container').style.display = 'none';
 }
 
 // Gyroscope controls for turtle movement
@@ -232,6 +304,10 @@ window.addEventListener('deviceorientation', function(event) {
   // Calculate new position
   let newX = currentPosition.x + (gamma / maxTilt) * speed;
   let newY = currentPosition.y + (beta / maxTilt) * speed;
+
+  // Boundary checks to prevent moving off-screen
+  newX = Math.max(0, Math.min(newX, window.innerWidth - playerElement.offsetWidth));
+  newY = Math.max(0, Math.min(newY, window.innerHeight - playerElement.offsetHeight));
 
   // Update player position
   playerElement.style.left = `${newX}px`;
@@ -260,8 +336,8 @@ function isKnockedOff(x, y) {
   const islandCenterY = islandRect.top + islandRect.height / 2 - gameRect.top;
   const distance = Math.sqrt(Math.pow(x - islandCenterX, 2) + Math.pow(y - islandCenterY, 2));
 
-  // Radius of the island
-  const islandRadius = islandRect.width / 2;
+  // Radius of the island minus half the turtle size to ensure full shell is on the island
+  const islandRadius = islandRect.width / 2 - 16; // 32px turtle shell, half is 16px
 
   // If distance is greater than radius, player is off the island
   return distance > islandRadius;
