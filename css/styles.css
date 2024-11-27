@@ -19,6 +19,9 @@
   background-size: contain;
   z-index: 0;
   border-radius: 50%;  /* Circle shape */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);  /* Center the island */
 }
 
 /* Shark animation */
@@ -70,4 +73,9 @@
   position: absolute;
   top: 10px;
   z-index: 1;
+}
+
+#startButton {
+  margin-top: 20px;
+  font-size: 18px;
 }

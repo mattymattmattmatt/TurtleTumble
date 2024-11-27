@@ -20,12 +20,13 @@ const db = getDatabase(app);
 
 let gameStarted = false;
 let playerId = null;
+let player1Falls = 0;
+let player2Falls = 0;
 
 // Password Authentication and Start Game
 function authenticate() {
   const password = document.getElementById('password').value;
 
-  // Simple password validation (you can improve this later with Firebase Authentication)
   if (password === "password123") {
     playerId = 'player1'; // or 'player2' depending on who logs in first
     document.getElementById('password-container').style.display = 'none';
@@ -49,7 +50,7 @@ function startGame() {
   set(gameRef, {
     player1: { x: 100, y: 100 },
     player2: { x: 200, y: 200 },
-    score: { player1: 0, player2: 0 },
+    score: { player1: player1Falls, player2: player2Falls },
     timer: 120
   });
 
@@ -83,7 +84,35 @@ function startTimer() {
 
 function endGame() {
   // Logic to determine the winner based on who fell off the platform less
-  alert('Game Over!');
+  if (player1Falls < player2Falls) {
+    alert('Player 1 wins!');
+  } else if (player2Falls < player1Falls) {
+    alert('Player 2 wins!');
+  } else {
+    alert('It\'s a tie!');
+  }
+}
+
+// Shrink and Respawn Effect
+function knockOff(player) {
+  const playerElement = document.getElementById(player);
+  playerElement.style.transform = "scale(0.5)";  // Shrink effect
+  setTimeout(() => {
+    playerElement.style.transform = "scale(1)";  // Reset to normal size
+    respawnPlayer(player);
+  }, 2000);  // Respawn after 2 seconds
+}
+
+// Respawn Player back on the island
+function respawnPlayer(player) {
+  const playerElement = document.getElementById(player);
+  playerElement.style.left = "50%"; // Reset to island position
+  playerElement.style.top = "50%";
+  if (player === 'player1') {
+    player1Falls++;
+  } else {
+    player2Falls++;
+  }
 }
 
 // Gyroscope controls for turtle movement
@@ -113,4 +142,9 @@ window.addEventListener('deviceorientation', function(event) {
     x: currentPosition.left + gamma * 5,
     y: currentPosition.top + beta * 5
   });
+
+  // Check if player is knocked off the island
+  if (currentPosition.left < 0 || currentPosition.left > window.innerWidth || currentPosition.top < 0 || currentPosition.top > window.innerHeight) {
+    knockOff(playerId);
+  }
 });
