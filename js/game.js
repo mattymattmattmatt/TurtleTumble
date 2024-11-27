@@ -139,13 +139,31 @@ document.addEventListener('DOMContentLoaded', () => {
           initializePlayerPosition('player1');
           // Switch UI to waiting for player2
           passwordContainer.style.display = 'none';
+          joinContainer.style.display = 'none';
           waitingMessage.style.display = 'block';
           waitingMessage.textContent = "Waiting for the other player to join...";
           gameTitle.textContent = "Turtle Tumble - Host";
+
+          // Listen for Player 2 joining
+          listenForPlayer2();
         });
       }
     }).catch((error) => {
       console.error(error);
+    });
+  }
+
+  // Function to Listen for Player 2 Joining
+  function listenForPlayer2() {
+    const player2Ref = ref(db, `games/${gamePassword}/player2`);
+    onValue(player2Ref, (snapshot) => {
+      const data = snapshot.val();
+      if (data && playerId === 'player1' && !gameStarted) {
+        // Player 2 has joined
+        waitingMessage.textContent = "Player 2 has joined! Click 'Start Game' to begin.";
+        // Show the Start Game button
+        startButton.parentElement.style.display = 'block';
+      }
     });
   }
 
@@ -179,14 +197,34 @@ document.addEventListener('DOMContentLoaded', () => {
           onDisconnect(playerRef).remove();
           initializePlayerPosition('player2');
           // Switch UI to waiting for host to start the game
+          passwordContainer.style.display = 'none';
           joinContainer.style.display = 'none';
           waitingMessage.style.display = 'block';
           waitingMessage.textContent = "Waiting for the host to start the game...";
           gameTitle.textContent = "Turtle Tumble - Player 2";
+
+          // Optionally, listen for game start
+          listenForGameStart();
         }
       }
     }).catch((error) => {
       console.error(error);
+    });
+  }
+
+  // Function to Listen for Game Start
+  function listenForGameStart() {
+    const startedRef = ref(db, `games/${gamePassword}/started`);
+    onValue(startedRef, (snapshot) => {
+      const started = snapshot.val();
+      if (started && playerId === 'player2') {
+        // Game has started
+        waitingMessage.style.display = 'none';
+        scoreDisplay.style.display = 'block';
+        timerDisplay.style.display = 'block';
+        disconnectButtonContainer.style.display = 'block';
+        gameStarted = true;
+      }
     });
   }
 
@@ -258,7 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
       started: true
     }).then(() => {
       // Hide start button and show score, timer, and disconnect button
-      startButton.style.display = 'none';
+      startButton.parentElement.style.display = 'none';
       waitingMessage.style.display = 'none';
       scoreDisplay.style.display = 'block';
       timerDisplay.style.display = 'block';
@@ -470,7 +508,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let newY2 = parseFloat(player2.style.top) - Math.sin(angle) * moveDistance;
 
         // Boundary checks relative to the game container
-        const gameRect = document.getElementById('game').getBoundingClientRect();
         newX1 = Math.max(0, Math.min(newX1, gameRect.width - player1.offsetWidth));
         newY1 = Math.max(0, Math.min(newY1, gameRect.height - player1.offsetHeight));
         newX2 = Math.max(0, Math.min(newX2, gameRect.width - player2.offsetWidth));
@@ -560,4 +597,5 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }, 2000); // 2 seconds delay
   }
+
 });
