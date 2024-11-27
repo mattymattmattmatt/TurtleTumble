@@ -1,5 +1,5 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+import { getDatabase, ref, set, onValue, update, get, child } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -19,10 +19,10 @@ const db = getDatabase(app);
 
 let gameStarted = false;
 let playerId = null;
-let otherPlayerReady = false;
 let player1Falls = 0;
 let player2Falls = 0;
 
+// Reference to the game state in Firebase
 const gameRef = ref(db, 'games/gameId');
 
 // Wait for the DOM to be fully loaded before adding event listeners
@@ -32,62 +32,162 @@ window.addEventListener('DOMContentLoaded', (event) => {
   
   // Set up the event listener for the "Start Game" button
   document.getElementById('start-game-button').addEventListener('click', startGame);
+  
+  // Listen for changes in the game state
+  onValue(gameRef, (snapshot) => {
+    const data = snapshot.val();
+    if (!data) return;
+    
+    // Update positions
+    if (data.player1) {
+      const player1 = document.getElementById('player1');
+      player1.style.left = `${data.player1.x}px`;
+      player1.style.top = `${data.player1.y}px`;
+    }
+    
+    if (data.player2) {
+      const player2 = document.getElementById('player2');
+      player2.style.left = `${data.player2.x}px`;
+      player2.style.top = `${data.player2.y}px`;
+    }
+    
+    // Update scores
+    if (data.score) {
+      document.getElementById('score').textContent = `Score: Player 1 - ${data.score.player1}, Player 2 - ${data.score.player2}`;
+    }
+  });
 });
 
-// Password Authentication and Start Game
+// Authenticate function
 function authenticate() {
-  const password = document.getElementById('password').value;
-
-  if (password === "password123") {
-    playerId = 'player1'; // or 'player2' depending on who logs in first
-    document.getElementById('password-container').style.display = 'none';
-    document.getElementById('waiting-message').style.display = 'block';
-
-    // Listen for the second player to join
-    onValue(gameRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data && data.player2 && !gameStarted) {
-        otherPlayerReady = true;
-        showStartButton();
-      }
-    });
+  const password = document.getElementById('password').value.trim();
+  
+  if (password === "password123") { // Example password
+    assignPlayer();
   } else {
     alert("Incorrect password. Try again.");
   }
 }
 
-// Show the start button once both players are ready
-function showStartButton() {
-  document.getElementById('startButton').style.display = 'block';
+// Assign player as Player 1 or Player 2
+function assignPlayer() {
+  get(child(gameRef, 'player1')).then((snapshot) => {
+    if (!snapshot.exists()) {
+      playerId = 'player1';
+      set(ref(db, 'games/gameId/player1'), {
+        x: 0,
+        y: 0,
+        ready: false
+      });
+      initializePlayerPosition('player1');
+    } else {
+      get(child(gameRef, 'player2')).then((snapshot2) => {
+        if (!snapshot2.exists()) {
+          playerId = 'player2';
+          set(ref(db, 'games/gameId/player2'), {
+            x: 0,
+            y: 0,
+            ready: false
+          });
+          initializePlayerPosition('player2');
+        } else {
+          alert("Game is full. Please try again later.");
+        }
+      });
+    }
+  }).catch((error) => {
+    console.error(error);
+  });
+}
+
+// Initialize player positions on the island
+function initializePlayerPosition(player) {
+  const island = document.getElementById('island');
+  const islandRect = island.getBoundingClientRect();
+  const gameRect = document.getElementById('game').getBoundingClientRect();
+  
+  const islandCenterX = islandRect.left + islandRect.width / 2 - gameRect.left;
+  const islandCenterY = islandRect.top + islandRect.height / 2 - gameRect.top;
+  
+  const offset = player === 'player1' ? -60 : 60; // Adjust position for Player 1 and Player 2
+  
+  const playerElement = document.getElementById(player);
+  playerElement.style.left = `${islandCenterX + offset}px`;
+  playerElement.style.top = `${islandCenterY}px`;
+  
+  // Update Firebase with initial position
+  update(ref(db, `games/gameId/${player}`), {
+    x: islandCenterX + offset,
+    y: islandCenterY
+  });
+  
+  // Hide password container and show waiting message
+  document.getElementById('password-container').style.display = 'none';
+  document.getElementById('waiting-message').style.display = 'block';
+  
+  checkPlayersReady();
+}
+
+// Check if both players have joined
+function checkPlayersReady() {
+  onValue(gameRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data && data.player1 && data.player2) {
+      document.getElementById('waiting-message').style.display = 'none';
+      document.getElementById('start-button-container').style.display = 'flex';
+    }
+  });
 }
 
 // Start the game
 function startGame() {
-  if (playerId === 'player1') {
+  if (!gameStarted) {
+    gameStarted = true;
+    
+    // Initialize game state in Firebase
     set(gameRef, {
-      player1: { x: 100, y: 100, ready: true },
-      player2: { x: 200, y: 200, ready: true },
-      score: { player1: player1Falls, player2: player2Falls },
-      timer: 120
+      player1: {
+        x: document.getElementById('player1').offsetLeft,
+        y: document.getElementById('player1').offsetTop,
+        ready: true
+      },
+      player2: {
+        x: document.getElementById('player2').offsetLeft,
+        y: document.getElementById('player2').offsetTop,
+        ready: true
+      },
+      score: {
+        player1: player1Falls,
+        player2: player2Falls
+      },
+      timer: 120,
+      started: true
     });
-    document.getElementById('startButton').style.display = 'none';
+
+    // Hide start button and show score and timer
+    document.getElementById('start-button-container').style.display = 'none';
     document.getElementById('score').style.display = 'block';
     document.getElementById('timer').style.display = 'block';
-    gameStarted = true;
+    
+    // Start the timer
     startTimer();
   }
 }
 
 // Timer countdown
 function startTimer() {
-  let timeLeft = 120;
+  let timeLeft = 120; // 2 minutes
   const timerElement = document.getElementById('timer');
+  
   const interval = setInterval(() => {
     timeLeft--;
     const minutes = Math.floor(timeLeft / 60);
     const seconds = timeLeft % 60;
     timerElement.textContent = `Time Left: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-
+    
+    // Update Firebase timer
+    update(ref(db, 'games/gameId'), { timer: timeLeft });
+    
     if (timeLeft <= 0) {
       clearInterval(interval);
       endGame();
@@ -95,69 +195,123 @@ function startTimer() {
   }, 1000);
 }
 
-// End the game and display the winner
+// End the game and determine the winner
 function endGame() {
-  if (player1Falls < player2Falls) {
-    alert('Player 1 wins!');
-  } else if (player2Falls < player1Falls) {
-    alert('Player 2 wins!');
-  } else {
-    alert('It\'s a tie!');
-  }
+  get(child(gameRef, 'score')).then((snapshot) => {
+    if (snapshot.exists()) {
+      const scores = snapshot.val();
+      if (scores.player1 < scores.player2) {
+        alert('Player 1 wins!');
+      } else if (scores.player2 < scores.player1) {
+        alert('Player 2 wins!');
+      } else {
+        alert('It\'s a tie!');
+      }
+    }
+  }).catch((error) => {
+    console.error(error);
+  });
 }
 
 // Gyroscope controls for turtle movement
 window.addEventListener('deviceorientation', function(event) {
-  if (!gameStarted) return;
+  if (!gameStarted || !playerId) return;
 
   const beta = event.beta;  // Forward/back tilt (X-axis)
   const gamma = event.gamma; // Left/right tilt (Y-axis)
 
   let playerElement = document.getElementById(playerId);
-  let currentPosition = playerElement.getBoundingClientRect();
+  let currentPosition = {
+    x: playerElement.offsetLeft,
+    y: playerElement.offsetTop
+  };
 
-  const speed = 5;
+  const speed = 2; // Adjust speed as needed
   const maxTilt = 30; // Max tilt angle to move player
 
-  if (Math.abs(beta) < maxTilt) {
-    playerElement.style.top = (currentPosition.top + speed * (beta / maxTilt)) + 'px';
-  }
+  // Calculate new position
+  let newX = currentPosition.x + (gamma / maxTilt) * speed;
+  let newY = currentPosition.y + (beta / maxTilt) * speed;
 
-  if (Math.abs(gamma) < maxTilt) {
-    playerElement.style.left = (currentPosition.left + speed * (gamma / maxTilt)) + 'px';
-  }
+  // Update player position
+  playerElement.style.left = `${newX}px`;
+  playerElement.style.top = `${newY}px`;
 
-  // Update player position in Firebase
-  const playerRef = ref(db, `games/gameId/${playerId}`);
-  set(playerRef, {
-    x: currentPosition.left + gamma * 5,
-    y: currentPosition.top + beta * 5
+  // Update Firebase with new position
+  update(ref(db, `games/gameId/${playerId}`), {
+    x: newX,
+    y: newY
   });
 
   // Check if player is knocked off the island
-  if (currentPosition.left < 0 || currentPosition.left > window.innerWidth || currentPosition.top < 0 || currentPosition.top > window.innerHeight) {
+  if (isKnockedOff(newX, newY)) {
     knockOff(playerId);
   }
 });
 
-// Shrink and Respawn Effect
-function knockOff(player) {
-  const playerElement = document.getElementById(player);
-  playerElement.style.transform = "scale(0.5)";  // Shrink effect
-  setTimeout(() => {
-    playerElement.style.transform = "scale(1)";  // Reset to normal size
-    respawnPlayer(player);
-  }, 2000);  // Respawn after 2 seconds
+// Function to check if the player is knocked off the island
+function isKnockedOff(x, y) {
+  const island = document.getElementById('island');
+  const islandRect = island.getBoundingClientRect();
+  const gameRect = document.getElementById('game').getBoundingClientRect();
+
+  // Calculate distance from island center
+  const islandCenterX = islandRect.left + islandRect.width / 2 - gameRect.left;
+  const islandCenterY = islandRect.top + islandRect.height / 2 - gameRect.top;
+  const distance = Math.sqrt(Math.pow(x - islandCenterX, 2) + Math.pow(y - islandCenterY, 2));
+
+  // Radius of the island
+  const islandRadius = islandRect.width / 2;
+
+  // If distance is greater than radius, player is off the island
+  return distance > islandRadius;
 }
 
-// Respawn Player back on the island
-function respawnPlayer(player) {
-  const playerElement = document.getElementById(player);
-  playerElement.style.left = "50%"; // Reset to island position
-  playerElement.style.top = "50%";
+// Function to handle player being knocked off
+function knockOff(player) {
+  // Increment fall count
   if (player === 'player1') {
     player1Falls++;
   } else {
     player2Falls++;
   }
+
+  // Update score in Firebase
+  update(ref(db, 'games/gameId/score'), {
+    player1: player1Falls,
+    player2: player2Falls
+  });
+
+  // Shrink the turtle shell
+  const playerElement = document.getElementById(player);
+  playerElement.style.transition = 'transform 0.5s ease-in-out';
+  playerElement.style.transform = 'scale(0.5)';
+
+  // Remove from game for 2 seconds
+  setTimeout(() => {
+    // Respawn the turtle shell
+    playerElement.style.transform = 'scale(1)';
+    
+    // Reset position to island center
+    const island = document.getElementById('island');
+    const islandRect = island.getBoundingClientRect();
+    const gameRect = document.getElementById('game').getBoundingClientRect();
+    const islandCenterX = islandRect.left + islandRect.width / 2 - gameRect.left;
+    const islandCenterY = islandRect.top + islandRect.height / 2 - gameRect.top;
+
+    const offset = player === 'player1' ? -60 : 60; // Adjust position for Player 1 and Player 2
+
+    const newX = islandCenterX + offset;
+    const newY = islandCenterY;
+
+    const playerElementNew = document.getElementById(player);
+    playerElementNew.style.left = `${newX}px`;
+    playerElementNew.style.top = `${newY}px`;
+
+    // Update Firebase with respawned position
+    update(ref(db, `games/gameId/${player}`), {
+      x: newX,
+      y: newY
+    });
+  }, 2000); // 2 seconds delay
 }

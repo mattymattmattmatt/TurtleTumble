@@ -67,6 +67,7 @@ body {
   animation: swim 5s linear infinite;
 }
 
+/* Animation for sharks swimming */
 @keyframes swim {
   0% {
     left: -100px;
@@ -79,8 +80,8 @@ body {
 /* Turtle Shells (Players) */
 .turtle {
   position: absolute;
-  width: 20px;  /* 75% smaller */
-  height: 20px; /* 75% smaller */
+  width: 32px;  /* 60% smaller than the original size */
+  height: 32px; /* 60% smaller than the original size */
   background-size: contain;
   background-repeat: no-repeat;
   transition: all 0.3s ease-in-out; /* Smooth transition for movements */
@@ -90,14 +91,14 @@ body {
   background-image: url('../images/player1_shell.png'); /* Player 1 shell image */
   top: 50%; /* Position on the island */
   left: 50%; /* Position on the island */
-  transform: translate(-50%, -50%); /* Center the turtle shell on the island */
+  transform: translate(-60%, -50%); /* Center the turtle shell on the island */
 }
 
 #player2 {
   background-image: url('../images/player2_shell.png'); /* Player 2 shell image */
   top: 50%; /* Position on the island */
   left: 50%; /* Position on the island */
-  transform: translate(50%, -50%); /* Position the second turtle shell slightly apart */
+  transform: translate(60%, -50%); /* Position the second turtle shell slightly apart */
 }
 
 /* Score and Timer */
@@ -114,41 +115,37 @@ body {
 }
 
 /* Button Styles */
-#startButton {
+#start-button-container, #password-container {
+  position: absolute;
+  top: 60%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+#startButton, #password-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 20px;
-  font-size: 20px;
+  flex-direction: column;
+}
+
+#start-game-button, #join-button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  font-size: 18px;
   font-weight: bold;
   background-color: #4CAF50;
   color: white;
   border: none;
-  padding: 15px 40px;
   cursor: pointer;
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
   transition: background-color 0.3s ease;
 }
 
-#startButton:hover {
+#start-game-button:hover, #join-button:hover {
   background-color: #45a049;
-}
-
-button {
-  padding: 10px 15px;
-  font-size: 16px;
-  border: none;
-  cursor: pointer;
-  border-radius: 10px;
-  background-color: #008CBA;
-  color: white;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
-  transition: background-color 0.3s ease;
-}
-
-button:hover {
-  background-color: #007B8C;
 }
 
 /* Waiting for players */
@@ -173,12 +170,17 @@ button:hover {
   }
 
   .turtle {
-    width: 15px; /* 75% smaller */
-    height: 15px; /* 75% smaller */
+    width: 20px; /* 60% smaller */
+    height: 20px; /* 60% smaller */
   }
 
   #score, #timer {
     font-size: 18px;
     padding: 4px 8px;
+  }
+
+  #start-game-button, #join-button {
+    font-size: 16px;
+    padding: 8px 16px;
   }
 }

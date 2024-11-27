@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Turtle Tumble</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -12,29 +12,35 @@
     <div id="background"></div> <!-- Background Image -->
     <div id="island"></div> <!-- Island Image -->
 
+    <!-- Password Entry -->
     <div id="password-container">
-      <input type="password" id="password" placeholder="Enter password" />
+      <input type="text" id="password" placeholder="Enter password" />
       <button id="join-button">Join Game</button>
     </div>
 
+    <!-- Waiting for other player -->
     <div id="waiting-message" style="display:none;">Waiting for other player to join...</div>
 
-    <div id="startButton" style="display:none;">
+    <!-- Start Game Button -->
+    <div id="start-button-container" style="display:none;">
       <button id="start-game-button">Start Game</button>
     </div>
 
+    <!-- Score and Timer -->
     <div id="score" style="display:none;">Score: Player 1 - 0, Player 2 - 0</div>
     <div id="timer" style="display:none;">Time Left: 2:00</div>
 
+    <!-- Player Turtle Shells -->
     <div id="player1" class="turtle"></div> <!-- Player 1's Turtle Shell -->
     <div id="player2" class="turtle"></div> <!-- Player 2's Turtle Shell -->
 
     <!-- Shark Images -->
-    <div class="shark" style="animation-delay: 1s; left: -100px;"></div>
-    <div class="shark" style="animation-delay: 2s; left: -200px;"></div>
-    <div class="shark" style="animation-delay: 3s; left: -300px;"></div>
+    <div class="shark" style="animation-delay: 1s;"></div>
+    <div class="shark" style="animation-delay: 2s;"></div>
+    <div class="shark" style="animation-delay: 3s;"></div>
   </div>
 
+  <!-- Firebase SDKs -->
   <script type="module" src="js/game.js"></script>
 
 </body>
