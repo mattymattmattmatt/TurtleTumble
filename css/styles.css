@@ -79,23 +79,25 @@ body {
 /* Turtle Shells (Players) */
 .turtle {
   position: absolute;
-  width: 80px;
-  height: 80px;
+  width: 20px;  /* 75% smaller */
+  height: 20px; /* 75% smaller */
   background-size: contain;
   background-repeat: no-repeat;
   transition: all 0.3s ease-in-out; /* Smooth transition for movements */
 }
 
 #player1 {
-  background-image: url('../images/player1_shell.png');
-  top: 50%;
-  left: 30%;
+  background-image: url('../images/player1_shell.png'); /* Player 1 shell image */
+  top: 50%; /* Position on the island */
+  left: 50%; /* Position on the island */
+  transform: translate(-50%, -50%); /* Center the turtle shell on the island */
 }
 
 #player2 {
-  background-image: url('../images/player2_shell.png');
-  top: 50%;
-  left: 70%;
+  background-image: url('../images/player2_shell.png'); /* Player 2 shell image */
+  top: 50%; /* Position on the island */
+  left: 50%; /* Position on the island */
+  transform: translate(50%, -50%); /* Position the second turtle shell slightly apart */
 }
 
 /* Score and Timer */
@@ -171,8 +173,8 @@ button:hover {
   }
 
   .turtle {
-    width: 60px;
-    height: 60px;
+    width: 15px; /* 75% smaller */
+    height: 15px; /* 75% smaller */
   }
 
   #score, #timer {

@@ -25,6 +25,15 @@ let player2Falls = 0;
 
 const gameRef = ref(db, 'games/gameId');
 
+// Wait for the DOM to be fully loaded before adding event listeners
+window.addEventListener('DOMContentLoaded', (event) => {
+  // Set up the event listener for the "Join Game" button
+  document.getElementById('join-button').addEventListener('click', authenticate);
+  
+  // Set up the event listener for the "Start Game" button
+  document.getElementById('start-game-button').addEventListener('click', startGame);
+});
+
 // Password Authentication and Start Game
 function authenticate() {
   const password = document.getElementById('password').value;
