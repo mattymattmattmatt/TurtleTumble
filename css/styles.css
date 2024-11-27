@@ -70,6 +70,131 @@ body {
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
 }
 
+/* Main Menu */
+#main-menu {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+#main-menu button {
+  display: block;
+  margin: 10px auto;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: bold;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+  transition: background-color 0.3s ease;
+}
+
+#main-menu button:hover {
+  background-color: #45a049;
+}
+
+/* Password Entry and Join Game Containers */
+#password-container, #join-container {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+#password-container {
+  top: 60%;
+}
+
+#join-container {
+  top: 60%;
+}
+
+#password-container h2, #join-container h2 {
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+#password, #join-password {
+  padding: 10px;
+  width: 220px;
+  border: none;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+/* Button Styles */
+#create-button, #join-button, #start-game-button, #disconnect-button, #back-from-create, #back-from-join {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: bold;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+  transition: background-color 0.3s ease;
+  margin: 5px;
+}
+
+#create-button:hover, #join-button:hover, #start-game-button:hover, #disconnect-button:hover, #back-from-create:hover, #back-from-join:hover {
+  background-color: #45a049;
+}
+
+/* Disconnect Button Position */
+#disconnect-button-container {
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Waiting for players */
+#waiting-message {
+  font-size: 18px;
+  color: white;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+  font-weight: bold;
+  position: absolute;
+  top: 65%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: none;
+  text-align: center;
+}
+
+/* Start Game Button Container */
+#start-button-container {
+  top: 70%;
+}
+
+/* Score and Timer */
+#score, #timer {
+  font-size: 18px;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+  position: absolute;
+  top: 10px;
+  z-index: 1;
+  padding: 5px 10px;
+  background-color: rgba(0, 0, 0, 0.6);
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
+}
+
+/* Positioning Score and Timer */
+#score {
+  left: 10px;
+}
+
+#timer {
+  right: 10px;
+}
+
 /* Shark animation */
 .shark {
   position: absolute;
@@ -115,98 +240,6 @@ body {
   transform: translate(60%, -50%); /* Offset to position on the island */
 }
 
-/* Score and Timer */
-#score, #timer {
-  font-size: 18px;
-  text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
-  position: absolute;
-  top: 10px;
-  z-index: 1;
-  padding: 5px 10px;
-  background-color: rgba(0, 0, 0, 0.6);
-  border-radius: 10px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
-}
-
-/* Positioning Score and Timer */
-#score {
-  left: 10px;
-}
-
-#timer {
-  right: 10px;
-}
-
-/* Button Styles */
-#password-container, #join-container, #start-button-container, #disconnect-button-container {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  text-align: center;
-}
-
-#password-container {
-  top: 60%;
-}
-
-#join-container {
-  top: 60%;
-}
-
-#start-button-container {
-  top: 70%;
-}
-
-#disconnect-button-container {
-  bottom: 20px;
-}
-
-#password-container h2, #join-container h2 {
-  margin-bottom: 10px;
-  font-size: 16px;
-}
-
-#password, #join-password {
-  padding: 10px;
-  width: 220px;
-  border: none;
-  border-radius: 5px;
-  margin-bottom: 10px;
-  font-size: 14px;
-}
-
-/* Button Styles */
-#create-button, #join-button, #start-game-button, #disconnect-button {
-  padding: 10px 20px;
-  font-size: 14px;
-  font-weight: bold;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  cursor: pointer;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
-  transition: background-color 0.3s ease;
-}
-
-#create-button:hover, #join-button:hover, #start-game-button:hover, #disconnect-button:hover {
-  background-color: #45a049;
-}
-
-/* Waiting for players */
-#waiting-message {
-  font-size: 18px;
-  color: white;
-  text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
-  font-weight: bold;
-  position: absolute;
-  top: 65%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: none;
-  text-align: center;
-}
-
 /* Responsive Design */
 @media (max-width: 600px) {
   #game {
@@ -229,7 +262,7 @@ body {
     padding: 4px 8px;
   }
 
-  #create-button, #join-button, #start-game-button, #disconnect-button {
+  #create-button, #join-button, #start-game-button, #disconnect-button, #back-from-create, #back-from-join {
     font-size: 12px;
     padding: 8px 16px;
     width: 150px;
@@ -247,5 +280,11 @@ body {
   #waiting-message {
     top: 70%;
     font-size: 16px;
+  }
+
+  #main-menu button {
+    font-size: 12px;
+    padding: 8px 16px;
+    width: 150px;
   }
 }

@@ -31,21 +31,67 @@ const friction = 0.95; // Friction coefficient for smoother movement
 let gameRef = null;
 let playerRef = null;
 
-// DOM Elements
-document.addEventListener('DOMContentLoaded', () => {
-  const passwordContainer = document.getElementById('password-container');
-  const joinContainer = document.getElementById('join-container');
-  const createButton = document.getElementById('create-button');
-  const joinButton = document.getElementById('join-button');
-  const startButton = document.getElementById('start-game-button');
-  const disconnectButton = document.getElementById('disconnect-button');
-  const waitingMessage = document.getElementById('waiting-message');
-  const scoreDisplay = document.getElementById('score');
-  const timerDisplay = document.getElementById('timer');
-  const disconnectButtonContainer = document.getElementById('disconnect-button-container');
-  const gameTitle = document.getElementById('game-title');
+// DOM Elements (to be initialized after DOM is loaded)
+let passwordContainer;
+let joinContainer;
+let createButton;
+let joinButton;
+let startButton;
+let disconnectButton;
+let waitingMessage;
+let scoreDisplay;
+let timerDisplay;
+let disconnectButtonContainer;
+let gameTitle;
+let mainMenu;
+let createMenuButton;
+let joinMenuButton;
+let backFromCreate;
+let backFromJoin;
 
-  // Event Listeners
+// Wait for the DOM to load
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize DOM Elements
+  passwordContainer = document.getElementById('password-container');
+  joinContainer = document.getElementById('join-container');
+  createButton = document.getElementById('create-button');
+  joinButton = document.getElementById('join-button');
+  startButton = document.getElementById('start-game-button');
+  disconnectButton = document.getElementById('disconnect-button');
+  waitingMessage = document.getElementById('waiting-message');
+  scoreDisplay = document.getElementById('score');
+  timerDisplay = document.getElementById('timer');
+  disconnectButtonContainer = document.getElementById('disconnect-button-container');
+  gameTitle = document.getElementById('game-title');
+  mainMenu = document.getElementById('main-menu');
+  createMenuButton = document.getElementById('create-menu-button');
+  joinMenuButton = document.getElementById('join-menu-button');
+  backFromCreate = document.getElementById('back-from-create');
+  backFromJoin = document.getElementById('back-from-join');
+
+  // Event Listeners for Main Menu
+  createMenuButton.addEventListener('click', () => {
+    mainMenu.style.display = 'none';
+    passwordContainer.style.display = 'block';
+  });
+
+  joinMenuButton.addEventListener('click', () => {
+    mainMenu.style.display = 'none';
+    joinContainer.style.display = 'block';
+  });
+
+  // Event Listeners for Back Buttons
+  backFromCreate.addEventListener('click', () => {
+    passwordContainer.style.display = 'none';
+    mainMenu.style.display = 'block';
+  });
+
+  backFromJoin.addEventListener('click', () => {
+    joinContainer.style.display = 'none';
+    mainMenu.style.display = 'block';
+  });
+
+  // Event Listeners for Create and Join Buttons
   createButton.addEventListener('click', createGame);
   joinButton.addEventListener('click', joinGame);
   startButton.addEventListener('click', startGame);
@@ -93,7 +139,6 @@ document.addEventListener('DOMContentLoaded', () => {
           initializePlayerPosition('player1');
           // Switch UI to waiting for player2
           passwordContainer.style.display = 'none';
-          joinContainer.style.display = 'none';
           waitingMessage.style.display = 'block';
           waitingMessage.textContent = "Waiting for the other player to join...";
           gameTitle.textContent = "Turtle Tumble - Host";
@@ -134,7 +179,6 @@ document.addEventListener('DOMContentLoaded', () => {
           onDisconnect(playerRef).remove();
           initializePlayerPosition('player2');
           // Switch UI to waiting for host to start the game
-          passwordContainer.style.display = 'none';
           joinContainer.style.display = 'none';
           waitingMessage.style.display = 'block';
           waitingMessage.textContent = "Waiting for the host to start the game...";
@@ -221,6 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
       disconnectButtonContainer.style.display = 'block';
       // Start the timer
       startTimer();
+      gameStarted = true;
     }).catch((error) => {
       console.error(error);
     });
@@ -310,14 +355,10 @@ document.addEventListener('DOMContentLoaded', () => {
         initializePlayerPosition(playerId);
       }
 
-      // Optionally, show create/join containers again
-      if (playerId === 'player1') {
-        passwordContainer.style.display = 'block';
-        gameTitle.textContent = "Turtle Tumble - Create a Game";
-      } else if (playerId === 'player2') {
-        joinContainer.style.display = 'block';
-        gameTitle.textContent = "Turtle Tumble - Join a Game";
-      }
+      // Show main menu again
+      mainMenu.style.display = 'block';
+      waitingMessage.style.display = 'none';
+      gameTitle.textContent = "Turtle Tumble";
     }).catch((error) => {
       console.error(error);
     });
@@ -373,9 +414,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let newX = currentX + velocity[playerId].x * 50; // Multiply for noticeable movement
     let newY = currentY + velocity[playerId].y * 50;
 
-    // Boundary checks
-    newX = Math.max(0, Math.min(newX, window.innerWidth - playerElement.offsetWidth));
-    newY = Math.max(0, Math.min(newY, window.innerHeight - playerElement.offsetHeight));
+    // Boundary checks relative to the game container
+    const gameRect = document.getElementById('game').getBoundingClientRect();
+    newX = Math.max(0, Math.min(newX, gameRect.width - playerElement.offsetWidth));
+    newY = Math.max(0, Math.min(newY, gameRect.height - playerElement.offsetHeight));
 
     // Update position
     playerElement.style.left = `${newX}px`;
@@ -427,11 +469,12 @@ document.addEventListener('DOMContentLoaded', () => {
         let newX2 = parseFloat(player2.style.left) - Math.cos(angle) * moveDistance;
         let newY2 = parseFloat(player2.style.top) - Math.sin(angle) * moveDistance;
 
-        // Update positions with boundary checks
-        newX1 = Math.max(0, Math.min(newX1, window.innerWidth - player1.offsetWidth));
-        newY1 = Math.max(0, Math.min(newY1, window.innerHeight - player1.offsetHeight));
-        newX2 = Math.max(0, Math.min(newX2, window.innerWidth - player2.offsetWidth));
-        newY2 = Math.max(0, Math.min(newY2, window.innerHeight - player2.offsetHeight));
+        // Boundary checks relative to the game container
+        const gameRect = document.getElementById('game').getBoundingClientRect();
+        newX1 = Math.max(0, Math.min(newX1, gameRect.width - player1.offsetWidth));
+        newY1 = Math.max(0, Math.min(newY1, gameRect.height - player1.offsetHeight));
+        newX2 = Math.max(0, Math.min(newX2, gameRect.width - player2.offsetWidth));
+        newY2 = Math.max(0, Math.min(newY2, gameRect.height - player2.offsetHeight));
 
         player1.style.left = `${newX1}px`;
         player1.style.top = `${newY1}px`;
@@ -517,5 +560,4 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }, 2000); // 2 seconds delay
   }
-
 });

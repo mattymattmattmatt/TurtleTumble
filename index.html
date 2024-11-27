@@ -19,11 +19,18 @@
     <!-- Game Title -->
     <div id="game-title">Turtle Tumble</div>
 
-    <!-- Password Entry -->
-    <div id="password-container">
+    <!-- Main Menu -->
+    <div id="main-menu">
+      <button id="create-menu-button">Create Game</button>
+      <button id="join-menu-button">Join Game</button>
+    </div>
+
+    <!-- Password Entry (Create Game) -->
+    <div id="password-container" style="display:none;">
       <h2 id="password-title">Create a Game</h2>
       <input type="text" id="password" placeholder="Enter a unique password" />
       <button id="create-button">Create Game</button>
+      <button id="back-from-create">Back</button>
     </div>
 
     <!-- Join Game -->
@@ -31,6 +38,7 @@
       <h2>Join a Game</h2>
       <input type="text" id="join-password" placeholder="Enter host's password" />
       <button id="join-button">Join Game</button>
+      <button id="back-from-join">Back</button>
     </div>
 
     <!-- Waiting for other player -->
