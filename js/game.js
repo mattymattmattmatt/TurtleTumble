@@ -49,6 +49,17 @@ let joinMenuButton;
 let backFromCreate;
 let backFromJoin;
 
+// Define keys state
+const keysPressed = {
+  w: false,
+  a: false,
+  s: false,
+  d: false
+};
+
+// Define movement speed
+const keyboardSpeed = 0.1; // Adjust as needed for desired speed
+
 // Wait for the DOM to load
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize DOM Elements
@@ -68,6 +79,9 @@ document.addEventListener('DOMContentLoaded', () => {
   joinMenuButton = document.getElementById('join-menu-button');
   backFromCreate = document.getElementById('back-from-create');
   backFromJoin = document.getElementById('back-from-join');
+
+  // Display control instructions based on device
+  displayControlInstructions();
 
   // Event Listeners for Main Menu
   createMenuButton.addEventListener('click', () => {
@@ -97,527 +111,634 @@ document.addEventListener('DOMContentLoaded', () => {
   startButton.addEventListener('click', startGame);
   disconnectButton.addEventListener('click', disconnectGame);
 
-  // Function to Create a New Game
-  function createGame() {
-    const passwordInput = document.getElementById('password').value.trim();
-    if (passwordInput === "") {
-      alert("Please enter a unique password to create a game.");
-      return;
+  // Add keyboard event listeners
+  window.addEventListener('keydown', (event) => {
+    const key = event.key.toLowerCase();
+    if (keysPressed.hasOwnProperty(key)) {
+      keysPressed[key] = true;
+      event.preventDefault(); // Prevent default behavior (like scrolling)
     }
-    gamePassword = passwordInput;
-    gameRef = ref(db, `games/${gamePassword}`);
+  });
 
-    // Check if game password already exists
-    get(gameRef).then((snapshot) => {
-      if (snapshot.exists()) {
-        alert("A game with this password already exists. Please choose another password.");
-      } else {
-        // Initialize game state
-        set(gameRef, {
-          player1: {
-            x: 0,
-            y: 0,
-            ready: false
-          },
-          player2: null,
-          score: {
-            player1: 0,
-            player2: 0
-          },
-          timer: 120,
-          started: false
-        }).then(() => {
-          playerId = 'player1';
-          playerRef = ref(db, `games/${gamePassword}/player1`);
-          set(playerRef, {
-            x: 0,
-            y: 0,
-            ready: false
-          });
-          // Set onDisconnect to remove player1 data
-          onDisconnect(playerRef).remove();
-          initializePlayerPosition('player1');
-          // Switch UI to waiting for player2
-          passwordContainer.style.display = 'none';
-          joinContainer.style.display = 'none';
-          waitingMessage.style.display = 'block';
-          waitingMessage.textContent = "Waiting for the other player to join...";
-          gameTitle.textContent = "Turtle Tumble - Host";
-
-          // Listen for Player 2 joining
-          listenForPlayer2();
-        });
-      }
-    }).catch((error) => {
-      console.error(error);
-    });
-  }
-
-  // Function to Listen for Player 2 Joining
-  function listenForPlayer2() {
-    const player2Ref = ref(db, `games/${gamePassword}/player2`);
-    onValue(player2Ref, (snapshot) => {
-      const data = snapshot.val();
-      if (data && playerId === 'player1' && !gameStarted) {
-        // Player 2 has joined
-        waitingMessage.textContent = "Player 2 has joined! Click 'Start Game' to begin.";
-        // Show the Start Game button
-        startButton.parentElement.style.display = 'block';
-      }
-    });
-  }
-
-  // Function to Join an Existing Game
-  function joinGame() {
-    const passwordInput = document.getElementById('join-password').value.trim();
-    if (passwordInput === "") {
-      alert("Please enter the host's password to join the game.");
-      return;
+  window.addEventListener('keyup', (event) => {
+    const key = event.key.toLowerCase();
+    if (keysPressed.hasOwnProperty(key)) {
+      keysPressed[key] = false;
+      event.preventDefault(); // Prevent default behavior
     }
-    gamePassword = passwordInput;
-    gameRef = ref(db, `games/${gamePassword}`);
+  });
 
-    // Check if game exists and has an available slot
-    get(gameRef).then((snapshot) => {
-      if (!snapshot.exists()) {
-        alert("No game found with this password. Please check and try again.");
-      } else {
-        const data = snapshot.val();
-        if (data.player2) {
-          alert("Game is full. Please try another game.");
-        } else {
-          playerId = 'player2';
-          playerRef = ref(db, `games/${gamePassword}/player2`);
-          set(playerRef, {
-            x: 0,
-            y: 0,
-            ready: false
-          });
-          // Set onDisconnect to remove player2 data
-          onDisconnect(playerRef).remove();
-          initializePlayerPosition('player2');
-          // Switch UI to waiting for host to start the game
-          passwordContainer.style.display = 'none';
-          joinContainer.style.display = 'none';
-          waitingMessage.style.display = 'block';
-          waitingMessage.textContent = "Waiting for the host to start the game...";
-          gameTitle.textContent = "Turtle Tumble - Player 2";
+  // Initialize the game loop
+  requestAnimationFrame(gameLoop);
+});
 
-          // Listen for game start
-          listenForGameStart();
-        }
-      }
-    }).catch((error) => {
-      console.error(error);
-    });
+// Function to Display Control Instructions
+function displayControlInstructions() {
+  const instructions = document.getElementById('control-instructions');
+
+  if (hasKeyboard()) {
+    instructions.textContent = "Use WASD keys to move your turtle.";
+    instructions.style.display = 'block';
+  } else {
+    instructions.textContent = "Tilt your device to move your turtle.";
+    instructions.style.display = 'block';
   }
+}
 
-  // Function to Listen for Game Start (Player 2 Side)
-  function listenForGameStart() {
-    const startedRef = ref(db, `games/${gamePassword}/started`);
-    onValue(startedRef, (snapshot) => {
-      const started = snapshot.val();
-      if (started && playerId === 'player2') {
-        // Game has started
-        waitingMessage.style.display = 'none';
-        scoreDisplay.style.display = 'block';
-        timerDisplay.style.display = 'block';
-        disconnectButtonContainer.style.display = 'block';
-        gameStarted = true;
-      }
-    });
+// Function to Detect if the Device Has a Keyboard (Desktop)
+function hasKeyboard() {
+  return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+}
+
+// Function to Create a New Game
+function createGame() {
+  const passwordInput = document.getElementById('password').value.trim();
+  if (passwordInput === "") {
+    alert("Please enter a unique password to create a game.");
+    return;
   }
+  gamePassword = passwordInput;
+  gameRef = ref(db, `games/${gamePassword}`);
 
-  // Function to Initialize Player Position on the Island
-  function initializePlayerPosition(player) {
-    const island = document.getElementById('island');
-    const islandRect = island.getBoundingClientRect();
-    const gameRect = document.getElementById('game').getBoundingClientRect();
-
-    const islandCenterX = islandRect.left + islandRect.width / 2 - gameRect.left;
-    const islandCenterY = islandRect.top + islandRect.height / 2 - gameRect.top;
-
-    const offset = player === 'player1' ? -60 : 60; // Adjust position for Player 1 and Player 2
-
-    const playerElement = document.getElementById(player);
-    playerElement.style.left = `${islandCenterX + offset}px`;
-    playerElement.style.top = `${islandCenterY}px`;
-
-    // Ensure positions are set correctly
-    const parsedX = parseFloat(playerElement.style.left);
-    const parsedY = parseFloat(playerElement.style.top);
-
-    // Fallback to 0 if parsing fails
-    const finalX = isNaN(parsedX) ? 0 : parsedX;
-    const finalY = isNaN(parsedY) ? 0 : parsedY;
-
-    // Update Firebase with initial position
-    update(ref(db, `games/${gamePassword}/${player}`), {
-      x: finalX,
-      y: finalY
-    }).then(() => {
-      // Show waiting message
-      if (playerId === 'player1') {
-        // Host waits for player2 to join
-        waitingMessage.textContent = "Waiting for the other player to join...";
-      } else {
-        // Player2 waits for game to start
-        waitingMessage.textContent = "Waiting for the host to start the game...";
-      }
-    });
-
-    // Hide join/create containers and show waiting message
-    if (playerId === 'player1') {
-      passwordContainer.style.display = 'none';
-      joinContainer.style.display = 'none';
+  // Check if game password already exists
+  get(gameRef).then((snapshot) => {
+    if (snapshot.exists()) {
+      alert("A game with this password already exists. Please choose another password.");
     } else {
-      passwordContainer.style.display = 'none';
-      joinContainer.style.display = 'none';
+      // Initialize game state
+      set(gameRef, {
+        player1: {
+          x: 0,
+          y: 0,
+          ready: false
+        },
+        player2: null,
+        score: {
+          player1: 0,
+          player2: 0
+        },
+        timer: 120,
+        started: false
+      }).then(() => {
+        playerId = 'player1';
+        playerRef = ref(db, `games/${gamePassword}/player1`);
+        set(playerRef, {
+          x: 0,
+          y: 0,
+          ready: false
+        });
+        // Set onDisconnect to remove player1 data
+        onDisconnect(playerRef).remove();
+        initializePlayerPosition('player1');
+        // Switch UI to waiting for player2
+        passwordContainer.style.display = 'none';
+        joinContainer.style.display = 'none';
+        waitingMessage.style.display = 'block';
+        waitingMessage.textContent = "Waiting for the other player to join...";
+        gameTitle.textContent = "Turtle Tumble - Host";
+
+        // Listen for Player 2 joining
+        listenForPlayer2();
+      });
     }
-    waitingMessage.style.display = 'block';
+  }).catch((error) => {
+    console.error(error);
+  });
+}
+
+// Function to Listen for Player 2 Joining
+function listenForPlayer2() {
+  const player2Ref = ref(db, `games/${gamePassword}/player2`);
+  onValue(player2Ref, (snapshot) => {
+    const data = snapshot.val();
+    if (data && playerId === 'player1' && !gameStarted) {
+      // Player 2 has joined
+      waitingMessage.textContent = "Player 2 has joined! Click 'Start Game' to begin.";
+      // Show the Start Game button
+      startButton.parentElement.style.display = 'block';
+    }
+  });
+}
+
+// Function to Join an Existing Game
+function joinGame() {
+  const passwordInput = document.getElementById('join-password').value.trim();
+  if (passwordInput === "") {
+    alert("Please enter the host's password to join the game.");
+    return;
   }
+  gamePassword = passwordInput;
+  gameRef = ref(db, `games/${gamePassword}`);
 
-  // Function to Start the Game
-  function startGame() {
-    if (playerId !== 'player1') {
-      alert("Only the host can start the game.");
-      return;
+  // Check if game exists and has an available slot
+  get(gameRef).then((snapshot) => {
+    if (!snapshot.exists()) {
+      alert("No game found with this password. Please check and try again.");
+    } else {
+      const data = snapshot.val();
+      if (data.player2) {
+        alert("Game is full. Please try another game.");
+      } else {
+        playerId = 'player2';
+        playerRef = ref(db, `games/${gamePassword}/player2`);
+        set(playerRef, {
+          x: 0,
+          y: 0,
+          ready: false
+        });
+        // Set onDisconnect to remove player2 data
+        onDisconnect(playerRef).remove();
+        initializePlayerPosition('player2');
+        // Switch UI to waiting for host to start the game
+        passwordContainer.style.display = 'none';
+        joinContainer.style.display = 'none';
+        waitingMessage.style.display = 'block';
+        waitingMessage.textContent = "Waiting for the host to start the game...";
+        gameTitle.textContent = "Turtle Tumble - Player 2";
+
+        // Listen for game start
+        listenForGameStart();
+      }
     }
+  }).catch((error) => {
+    console.error(error);
+  });
+}
 
-    // Retrieve player positions
-    const player1Element = document.getElementById('player1');
-    const player2Element = document.getElementById('player2');
-
-    const p1x = parseFloat(player1Element.style.left);
-    const p1y = parseFloat(player1Element.style.top);
-    const p2x = parseFloat(player2Element.style.left);
-    const p2y = parseFloat(player2Element.style.top);
-
-    // Validate positions
-    if (isNaN(p1x) || isNaN(p1y) || isNaN(p2x) || isNaN(p2y)) {
-      alert("Invalid player positions. Please ensure both players are positioned correctly.");
-      return;
-    }
-
-    // Update game state to started
-    set(gameRef, {
-      player1: {
-        x: p1x,
-        y: p1y,
-        ready: true
-      },
-      player2: {
-        x: p2x,
-        y: p2y,
-        ready: true
-      },
-      score: {
-        player1: player1Falls,
-        player2: player2Falls
-      },
-      timer: 120,
-      started: true
-    }).then(() => {
-      // Hide start button and show score, timer, and disconnect button
-      startButton.parentElement.style.display = 'none';
+// Function to Listen for Game Start (Player 2 Side)
+function listenForGameStart() {
+  const startedRef = ref(db, `games/${gamePassword}/started`);
+  onValue(startedRef, (snapshot) => {
+    const started = snapshot.val();
+    if (started && playerId === 'player2') {
+      // Game has started
       waitingMessage.style.display = 'none';
       scoreDisplay.style.display = 'block';
       timerDisplay.style.display = 'block';
       disconnectButtonContainer.style.display = 'block';
-      // Start the timer
-      startTimer();
       gameStarted = true;
-    }).catch((error) => {
-      console.error(error);
-    });
+    }
+  });
+}
+
+// Function to Initialize Player Position on the Island
+function initializePlayerPosition(player) {
+  const island = document.getElementById('island');
+  const islandRect = island.getBoundingClientRect();
+  const gameRect = document.getElementById('game').getBoundingClientRect();
+
+  // Calculate the island's center relative to the game container
+  const islandCenterX = (gameRect.width / 2) - (player === 'player1' ? 60 : -60); // Offset for Player 1 and Player 2
+  const islandCenterY = gameRect.height / 2;
+
+  // Set initial positions based on the player
+  let initialX, initialY;
+  if (player === 'player1') {
+    initialX = islandCenterX - 60; // Position Player 1 to the left
+    initialY = islandCenterY;
+  } else {
+    initialX = islandCenterX + 60; // Position Player 2 to the right
+    initialY = islandCenterY;
   }
 
-  // Function to Start the Timer
-  function startTimer(initialTime = 120) {
-    let timeLeft = initialTime;
+  // Ensure positions are numerical and not NaN
+  initialX = isNaN(initialX) ? gameRect.width / 2 - 60 : initialX;
+  initialY = isNaN(initialY) ? gameRect.height / 2 : initialY;
+
+  const playerElement = document.getElementById(player);
+  playerElement.style.left = `${initialX}px`;
+  playerElement.style.top = `${initialY}px`;
+
+  // Update Firebase with initial position
+  update(ref(db, `games/${gamePassword}/${player}`), {
+    x: initialX,
+    y: initialY
+  }).then(() => {
+    // Show waiting message
+    if (playerId === 'player1') {
+      // Host waits for player2 to join
+      waitingMessage.textContent = "Waiting for the other player to join...";
+    } else {
+      // Player2 waits for game to start
+      waitingMessage.textContent = "Waiting for the host to start the game...";
+    }
+  });
+
+  // Hide join/create containers and show waiting message
+  passwordContainer.style.display = 'none';
+  joinContainer.style.display = 'none';
+  waitingMessage.style.display = 'block';
+}
+
+// Function to Start the Game
+function startGame() {
+  if (playerId !== 'player1') {
+    alert("Only the host can start the game.");
+    return;
+  }
+
+  // Retrieve player positions
+  const player1Element = document.getElementById('player1');
+  const player2Element = document.getElementById('player2');
+
+  const p1x = parseFloat(player1Element.style.left);
+  const p1y = parseFloat(player1Element.style.top);
+  const p2x = parseFloat(player2Element.style.left);
+  const p2y = parseFloat(player2Element.style.top);
+
+  // Validate positions
+  if (isNaN(p1x) || isNaN(p1y) || isNaN(p2x) || isNaN(p2y)) {
+    alert("Invalid player positions. Please ensure both players are positioned correctly.");
+    return;
+  }
+
+  // Update game state to started
+  set(gameRef, {
+    player1: {
+      x: p1x,
+      y: p1y,
+      ready: true
+    },
+    player2: {
+      x: p2x,
+      y: p2y,
+      ready: true
+    },
+    score: {
+      player1: player1Falls,
+      player2: player2Falls
+    },
+    timer: 120,
+    started: true
+  }).then(() => {
+    // Hide start button and show score, timer, and disconnect button
+    startButton.parentElement.style.display = 'none';
+    waitingMessage.style.display = 'none';
+    scoreDisplay.style.display = 'block';
+    timerDisplay.style.display = 'block';
+    disconnectButtonContainer.style.display = 'block';
+    // Start the timer
+    startTimer();
+    gameStarted = true;
+  }).catch((error) => {
+    console.error(error);
+  });
+}
+
+// Function to Start the Timer
+function startTimer(initialTime = 120) {
+  let timeLeft = initialTime;
+  timerDisplay.textContent = `Time Left: ${formatTime(timeLeft)}`;
+
+  timerInterval = setInterval(() => {
+    timeLeft--;
     timerDisplay.textContent = `Time Left: ${formatTime(timeLeft)}`;
 
-    timerInterval = setInterval(() => {
-      timeLeft--;
-      timerDisplay.textContent = `Time Left: ${formatTime(timeLeft)}`;
+    // Update Firebase timer
+    update(ref(db, `games/${gamePassword}/timer`), {
+      timer: timeLeft
+    });
 
-      // Update Firebase timer
-      update(ref(db, `games/${gamePassword}/timer`), {
-        timer: timeLeft
-      });
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      endGame();
+    }
+  }, 1000);
+}
 
-      if (timeLeft <= 0) {
-        clearInterval(timerInterval);
-        endGame();
+// Function to Format Time as MM:SS
+function formatTime(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+}
+
+// Function to End the Game
+function endGame() {
+  clearInterval(timerInterval);
+
+  // Determine the winner
+  get(child(gameRef, 'score')).then((snapshot) => {
+    if (snapshot.exists()) {
+      const scores = snapshot.val();
+      if (scores.player1 < scores.player2) {
+        alert('Player 1 wins!');
+      } else if (scores.player2 < scores.player1) {
+        alert('Player 2 wins!');
+      } else {
+        alert('It\'s a tie!');
       }
-    }, 1000);
-  }
+    }
+    // Reset the game
+    resetGame();
+  }).catch((error) => {
+    console.error(error);
+  });
+}
 
-  // Function to Format Time as MM:SS
-  function formatTime(seconds) {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
-  }
+// Function to Reset the Game
+function resetGame() {
+  // Reset game state in Firebase
+  set(gameRef, {
+    player1: {
+      x: 0,
+      y: 0,
+      ready: false
+    },
+    player2: null,
+    score: {
+      player1: 0,
+      player2: 0
+    },
+    timer: 120,
+    started: false
+  }).then(() => {
+    // Reset local variables
+    gameStarted = false;
+    player1Falls = 0;
+    player2Falls = 0;
+    velocity = { player1: { x: 0, y: 0 }, player2: { x: 0, y: 0 } };
 
-  // Function to End the Game
-  function endGame() {
-    clearInterval(timerInterval);
+    // Hide score, timer, disconnect button
+    scoreDisplay.style.display = 'none';
+    timerDisplay.style.display = 'none';
+    disconnectButtonContainer.style.display = 'none';
 
-    // Determine the winner
-    get(child(gameRef, 'score')).then((snapshot) => {
-      if (snapshot.exists()) {
-        const scores = snapshot.val();
-        if (scores.player1 < scores.player2) {
-          alert('Player 1 wins!');
-        } else if (scores.player2 < scores.player1) {
-          alert('Player 2 wins!');
-        } else {
-          alert('It\'s a tie!');
-        }
-      }
-      // Reset the game
+    // Reset turtle positions on the island
+    if (playerId === 'player1' || playerId === 'player2') {
+      initializePlayerPosition(playerId);
+    }
+
+    // Show main menu again
+    mainMenu.style.display = 'block';
+    waitingMessage.style.display = 'none';
+    gameTitle.textContent = "Turtle Tumble";
+  }).catch((error) => {
+    console.error(error);
+  });
+}
+
+// Function to Disconnect from the Game
+function disconnectGame() {
+  if (playerRef) {
+    remove(playerRef).then(() => {
+      alert("You have disconnected from the game.");
       resetGame();
     }).catch((error) => {
       console.error(error);
     });
   }
+}
 
-  // Function to Reset the Game
-  function resetGame() {
-    // Reset game state in Firebase
-    set(gameRef, {
-      player1: {
-        x: 0,
-        y: 0,
-        ready: false
-      },
-      player2: null,
-      score: {
-        player1: 0,
-        player2: 0
-      },
-      timer: 120,
-      started: false
-    }).then(() => {
-      // Reset local variables
-      gameStarted = false;
-      player1Falls = 0;
-      player2Falls = 0;
-      velocity = { player1: { x: 0, y: 0 }, player2: { x: 0, y: 0 } };
+// Function to Handle Gyroscope Controls with Enhanced Physics
+window.addEventListener('deviceorientation', function(event) {
+  if (!gameStarted || !playerId) return;
 
-      // Hide score, timer, disconnect button
-      scoreDisplay.style.display = 'none';
-      timerDisplay.style.display = 'none';
-      disconnectButtonContainer.style.display = 'none';
+  const beta = event.beta;  // Forward/back tilt (X-axis)
+  const gamma = event.gamma; // Left/right tilt (Y-axis)
 
-      // Reset turtle positions on the island
-      if (playerId === 'player1' || playerId === 'player2') {
-        initializePlayerPosition(playerId);
-      }
+  // Define acceleration based on tilt
+  const accelerationFactor = 0.05; // Adjust for sensitivity
+  const maxTilt = 30; // Maximum tilt angle
 
-      // Show main menu again
-      mainMenu.style.display = 'block';
-      waitingMessage.style.display = 'none';
-      gameTitle.textContent = "Turtle Tumble";
-    }).catch((error) => {
-      console.error(error);
-    });
+  // Calculate acceleration
+  let accelX = 0;
+  let accelY = 0;
+
+  if (Math.abs(beta) > 5) { // Deadzone
+    accelY = (beta / maxTilt) * accelerationFactor;
+  }
+  if (Math.abs(gamma) > 5) { // Deadzone
+    accelX = (gamma / maxTilt) * accelerationFactor;
   }
 
-  // Function to Disconnect from the Game
-  function disconnectGame() {
-    if (playerRef) {
-      remove(playerRef).then(() => {
-        alert("You have disconnected from the game.");
-        resetGame();
-      }).catch((error) => {
-        console.error(error);
+  // Update velocity from gyroscope
+  velocity[playerId].x += accelX;
+  velocity[playerId].y += accelY;
+
+  // Apply friction
+  velocity[playerId].x *= friction;
+  velocity[playerId].y *= friction;
+
+  // Update position
+  let playerElement = document.getElementById(playerId);
+  let currentX = parseFloat(playerElement.style.left);
+  let currentY = parseFloat(playerElement.style.top);
+
+  let newX = currentX + velocity[playerId].x * 50; // Multiply for noticeable movement
+  let newY = currentY + velocity[playerId].y * 50;
+
+  // Boundary checks relative to the game container
+  const gameRect = document.getElementById('game').getBoundingClientRect();
+  newX = Math.max(0, Math.min(newX, gameRect.width - playerElement.offsetWidth));
+  newY = Math.max(0, Math.min(newY, gameRect.height - playerElement.offsetHeight));
+
+  // Update position
+  playerElement.style.left = `${newX}px`;
+  playerElement.style.top = `${newY}px`;
+
+  // Update Firebase with new position
+  update(ref(db, `games/${gamePassword}/${playerId}`), {
+    x: newX,
+    y: newY
+  });
+
+  // Collision Detection
+  detectCollision();
+
+  // Check if player is knocked off the island
+  if (isKnockedOff(newX, newY)) {
+    knockOff(playerId);
+  }
+});
+
+// Function to Handle Keyboard Input and Update Velocity
+function handleKeyboardControls() {
+  if (!gameStarted || !playerId) return;
+
+  // Update velocity based on keys pressed
+  if (keysPressed.w) {
+    velocity[playerId].y -= keyboardSpeed;
+  }
+  if (keysPressed.s) {
+    velocity[playerId].y += keyboardSpeed;
+  }
+  if (keysPressed.a) {
+    velocity[playerId].x -= keyboardSpeed;
+  }
+  if (keysPressed.d) {
+    velocity[playerId].x += keyboardSpeed;
+  }
+
+  // Apply friction
+  velocity[playerId].x *= friction;
+  velocity[playerId].y *= friction;
+
+  // Update position
+  let playerElement = document.getElementById(playerId);
+  let currentX = parseFloat(playerElement.style.left);
+  let currentY = parseFloat(playerElement.style.top);
+
+  let newX = currentX + velocity[playerId].x * 50; // Multiply for noticeable movement
+  let newY = currentY + velocity[playerId].y * 50;
+
+  // Boundary checks relative to the game container
+  const gameRect = document.getElementById('game').getBoundingClientRect();
+  newX = Math.max(0, Math.min(newX, gameRect.width - playerElement.offsetWidth));
+  newY = Math.max(0, Math.min(newY, gameRect.height - playerElement.offsetHeight));
+
+  // Update position
+  playerElement.style.left = `${newX}px`;
+  playerElement.style.top = `${newY}px`;
+
+  // Update Firebase with new position
+  update(ref(db, `games/${gamePassword}/${playerId}`), {
+    x: newX,
+    y: newY
+  });
+
+  // Collision Detection
+  detectCollision();
+
+  // Check if player is knocked off the island
+  if (isKnockedOff(newX, newY)) {
+    knockOff(playerId);
+  }
+}
+
+// Function to Handle the Game Loop
+function gameLoop() {
+  if (gameStarted && playerId) {
+    handleKeyboardControls();
+    // Gyroscope controls are handled via event listeners
+  }
+  requestAnimationFrame(gameLoop);
+}
+
+// Function to Detect Collision Between Players
+function detectCollision() {
+  const player1 = document.getElementById('player1');
+  const player2 = document.getElementById('player2');
+
+  const rect1 = player1.getBoundingClientRect();
+  const rect2 = player2.getBoundingClientRect();
+
+  if (rect1.left < rect2.left + rect2.width &&
+      rect1.left + rect1.width > rect2.left &&
+      rect1.top < rect2.top + rect2.height &&
+      rect1.top + rect1.height > rect2.top) {
+    // Simple elastic collision response
+    const overlapX = (rect1.left + rect1.width / 2) - (rect2.left + rect2.width / 2);
+    const overlapY = (rect1.top + rect1.height / 2) - (rect2.top + rect2.height / 2);
+    const distance = Math.sqrt(overlapX * overlapX + overlapY * overlapY) || 1;
+
+    const minimumDistance = (rect1.width / 2) + (rect2.width / 2);
+
+    if (distance < minimumDistance) {
+      const angle = Math.atan2(overlapY, overlapX);
+      const moveDistance = (minimumDistance - distance) / 2;
+
+      // Move player1
+      let newX1 = parseFloat(player1.style.left) + Math.cos(angle) * moveDistance;
+      let newY1 = parseFloat(player1.style.top) + Math.sin(angle) * moveDistance;
+
+      // Move player2
+      let newX2 = parseFloat(player2.style.left) - Math.cos(angle) * moveDistance;
+      let newY2 = parseFloat(player2.style.top) - Math.sin(angle) * moveDistance;
+
+      // Boundary checks relative to the game container
+      newX1 = Math.max(0, Math.min(newX1, gameRect.width - player1.offsetWidth));
+      newY1 = Math.max(0, Math.min(newY1, gameRect.height - player1.offsetHeight));
+      newX2 = Math.max(0, Math.min(newX2, gameRect.width - player2.offsetWidth));
+      newY2 = Math.max(0, Math.min(newY2, gameRect.height - player2.offsetHeight));
+
+      player1.style.left = `${newX1}px`;
+      player1.style.top = `${newY1}px`;
+      player2.style.left = `${newX2}px`;
+      player2.style.top = `${newY2}px`;
+
+      // Update Firebase with new positions
+      update(ref(db, `games/${gamePassword}/player1`), {
+        x: newX1,
+        y: newY1
+      });
+      update(ref(db, `games/${gamePassword}/player2`), {
+        x: newX2,
+        y: newY2
       });
     }
   }
+}
 
-  // Function to Handle Gyroscope Controls with Enhanced Physics
-  window.addEventListener('deviceorientation', function(event) {
-    if (!gameStarted || !playerId) return;
+// Function to Check if Player is Knocked Off the Island
+function isKnockedOff(x, y) {
+  const island = document.getElementById('island');
+  const islandRect = island.getBoundingClientRect();
+  const gameRect = document.getElementById('game').getBoundingClientRect();
 
-    const beta = event.beta;  // Forward/back tilt (X-axis)
-    const gamma = event.gamma; // Left/right tilt (Y-axis)
+  // Calculate distance from island center
+  const islandCenterX = gameRect.width / 2;
+  const islandCenterY = gameRect.height / 2;
+  const distance = Math.sqrt(Math.pow(x - islandCenterX, 2) + Math.pow(y - islandCenterY, 2));
 
-    // Define acceleration based on tilt
-    const accelerationFactor = 0.05; // Adjust for sensitivity
-    const maxTilt = 30; // Maximum tilt angle
+  // Radius of the island minus half the turtle size to ensure full shell is on the island
+  const islandRadius = islandRect.width / 2 - 16; // 32px turtle shell, half is 16px
 
-    // Calculate acceleration
-    let accelX = 0;
-    let accelY = 0;
+  // If distance is greater than radius, player is off the island
+  return distance > islandRadius;
+}
 
-    if (Math.abs(beta) > 5) { // Deadzone
-      accelY = (beta / maxTilt) * accelerationFactor;
-    }
-    if (Math.abs(gamma) > 5) { // Deadzone
-      accelX = (gamma / maxTilt) * accelerationFactor;
-    }
+// Function to Handle Player Being Knocked Off
+function knockOff(player) {
+  // Increment fall count
+  if (player === 'player1') {
+    player1Falls++;
+  } else {
+    player2Falls++;
+  }
 
-    // Update velocity
-    velocity[playerId].x += accelX;
-    velocity[playerId].y += accelY;
+  // Update score in Firebase
+  update(ref(db, `games/${gamePassword}/score`), {
+    player1: player1Falls,
+    player2: player2Falls
+  });
 
-    // Apply friction
-    velocity[playerId].x *= friction;
-    velocity[playerId].y *= friction;
+  // Shrink the turtle shell to simulate falling
+  const playerElement = document.getElementById(player);
+  playerElement.style.transition = 'transform 0.5s ease-in-out';
+  playerElement.style.transform = 'scale(0.5)';
 
-    // Update position
-    let playerElement = document.getElementById(playerId);
-    let currentX = parseFloat(playerElement.style.left);
-    let currentY = parseFloat(playerElement.style.top);
+  // Remove from game for 2 seconds
+  setTimeout(() => {
+    // Respawn the turtle shell
+    playerElement.style.transform = 'scale(1)';
 
-    let newX = currentX + velocity[playerId].x * 50; // Multiply for noticeable movement
-    let newY = currentY + velocity[playerId].y * 50;
-
-    // Boundary checks relative to the game container
+    // Reset position to island center
+    const island = document.getElementById('island');
     const gameRect = document.getElementById('game').getBoundingClientRect();
-    newX = Math.max(0, Math.min(newX, gameRect.width - playerElement.offsetWidth));
-    newY = Math.max(0, Math.min(newY, gameRect.height - playerElement.offsetHeight));
+    const islandCenterX = gameRect.width / 2;
+    const islandCenterY = gameRect.height / 2;
 
-    // Update position
+    let newX, newY;
+    if (player === 'player1') {
+      newX = islandCenterX - 60; // Position Player 1 to the left
+      newY = islandCenterY;
+    } else {
+      newX = islandCenterX + 60; // Position Player 2 to the right
+      newY = islandCenterY;
+    }
+
+    // Ensure positions are numerical and not NaN
+    newX = isNaN(newX) ? gameRect.width / 2 - 60 : newX;
+    newY = isNaN(newY) ? gameRect.height / 2 : newY;
+
     playerElement.style.left = `${newX}px`;
     playerElement.style.top = `${newY}px`;
 
-    // Update Firebase with new position
-    update(ref(db, `games/${gamePassword}/${playerId}`), {
+    // Update Firebase with respawned position
+    update(ref(db, `games/${gamePassword}/${player}`), {
       x: newX,
       y: newY
     });
-
-    // Collision Detection
-    detectCollision();
-
-    // Check if player is knocked off the island
-    if (isKnockedOff(newX, newY)) {
-      knockOff(playerId);
-    }
-  });
-
-  // Function to Detect Collision Between Players
-  function detectCollision() {
-    const player1 = document.getElementById('player1');
-    const player2 = document.getElementById('player2');
-
-    const rect1 = player1.getBoundingClientRect();
-    const rect2 = player2.getBoundingClientRect();
-
-    if (rect1.left < rect2.left + rect2.width &&
-        rect1.left + rect1.width > rect2.left &&
-        rect1.top < rect2.top + rect2.height &&
-        rect1.top + rect1.height > rect2.top) {
-      // Simple elastic collision response
-      const overlapX = (rect1.left + rect1.width / 2) - (rect2.left + rect2.width / 2);
-      const overlapY = (rect1.top + rect1.height / 2) - (rect2.top + rect2.height / 2);
-      const distance = Math.sqrt(overlapX * overlapX + overlapY * overlapY) || 1;
-
-      const minimumDistance = (rect1.width / 2) + (rect2.width / 2);
-
-      if (distance < minimumDistance) {
-        const angle = Math.atan2(overlapY, overlapX);
-        const moveDistance = (minimumDistance - distance) / 2;
-
-        // Move player1
-        let newX1 = parseFloat(player1.style.left) + Math.cos(angle) * moveDistance;
-        let newY1 = parseFloat(player1.style.top) + Math.sin(angle) * moveDistance;
-
-        // Move player2
-        let newX2 = parseFloat(player2.style.left) - Math.cos(angle) * moveDistance;
-        let newY2 = parseFloat(player2.style.top) - Math.sin(angle) * moveDistance;
-
-        // Boundary checks relative to the game container
-        newX1 = Math.max(0, Math.min(newX1, gameRect.width - player1.offsetWidth));
-        newY1 = Math.max(0, Math.min(newY1, gameRect.height - player1.offsetHeight));
-        newX2 = Math.max(0, Math.min(newX2, gameRect.width - player2.offsetWidth));
-        newY2 = Math.max(0, Math.min(newY2, gameRect.height - player2.offsetHeight));
-
-        player1.style.left = `${newX1}px`;
-        player1.style.top = `${newY1}px`;
-        player2.style.left = `${newX2}px`;
-        player2.style.top = `${newY2}px`;
-
-        // Update Firebase with new positions
-        update(ref(db, `games/${gamePassword}/player1`), {
-          x: newX1,
-          y: newY1
-        });
-        update(ref(db, `games/${gamePassword}/player2`), {
-          x: newX2,
-          y: newY2
-        });
-      }
-    }
-  }
-
-  // Function to Check if Player is Knocked Off the Island
-  function isKnockedOff(x, y) {
-    const island = document.getElementById('island');
-    const islandRect = island.getBoundingClientRect();
-    const gameRect = document.getElementById('game').getBoundingClientRect();
-
-    // Calculate distance from island center
-    const islandCenterX = islandRect.left + islandRect.width / 2 - gameRect.left;
-    const islandCenterY = islandRect.top + islandRect.height / 2 - gameRect.top;
-    const distance = Math.sqrt(Math.pow(x - islandCenterX, 2) + Math.pow(y - islandCenterY, 2));
-
-    // Radius of the island minus half the turtle size to ensure full shell is on the island
-    const islandRadius = islandRect.width / 2 - 16; // 32px turtle shell, half is 16px
-
-    // If distance is greater than radius, player is off the island
-    return distance > islandRadius;
-  }
-
-  // Function to Handle Player Being Knocked Off
-  function knockOff(player) {
-    // Increment fall count
-    if (player === 'player1') {
-      player1Falls++;
-    } else {
-      player2Falls++;
-    }
-
-    // Update score in Firebase
-    update(ref(db, `games/${gamePassword}/score`), {
-      player1: player1Falls,
-      player2: player2Falls
-    });
-
-    // Shrink the turtle shell to simulate falling
-    const playerElement = document.getElementById(player);
-    playerElement.style.transition = 'transform 0.5s ease-in-out';
-    playerElement.style.transform = 'scale(0.5)';
-
-    // Remove from game for 2 seconds
-    setTimeout(() => {
-      // Respawn the turtle shell
-      playerElement.style.transform = 'scale(1)';
-
-      // Reset position to island center
-      const island = document.getElementById('island');
-      const islandRect = island.getBoundingClientRect();
-      const gameRect = document.getElementById('game').getBoundingClientRect();
-      const islandCenterX = islandRect.left + islandRect.width / 2 - gameRect.left;
-      const islandCenterY = islandRect.top + islandRect.height / 2 - gameRect.top;
-
-      const offset = player === 'player1' ? -60 : 60; // Adjust position for Player 1 and Player 2
-
-      const newX = islandCenterX + offset;
-      const newY = islandCenterY;
-
-      const playerElementNew = document.getElementById(player);
-      playerElementNew.style.left = `${newX}px`;
-      playerElementNew.style.top = `${newY}px`;
-
-      // Update Firebase with respawned position
-      update(ref(db, `games/${gamePassword}/${player}`), {
-        x: newX,
-        y: newY
-      });
-    }, 2000); // 2 seconds delay
-  }
-});
+  }, 2000); // 2 seconds delay
+}

@@ -70,6 +70,22 @@ body {
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
 }
 
+/* Control Instructions */
+#control-instructions {
+  position: absolute;
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.6);
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 12px;
+  text-align: center;
+  color: white;
+  z-index: 2;
+  font-family: 'Press Start 2P', cursive;
+}
+
 /* Main Menu */
 #main-menu {
   position: absolute;
@@ -228,20 +244,17 @@ body {
   background-size: contain;
   background-repeat: no-repeat;
   transition: all 0.1s ease-in-out; /* Smooth transition for movements */
+  z-index: 1; /* Ensure turtles appear above the island but below control instructions */
 }
 
 #player1 {
   background-image: url('../images/player1_shell.png'); /* Player 1 shell image */
-  top: 50%; /* Position on the island */
-  left: 50%; /* Position on the island */
-  transform: translate(-60%, -50%); /* Offset to position on the island */
+  /* Initial position set via JavaScript */
 }
 
 #player2 {
   background-image: url('../images/player2_shell.png'); /* Player 2 shell image */
-  top: 50%; /* Position on the island */
-  left: 50%; /* Position on the island */
-  transform: translate(60%, -50%); /* Offset to position on the island */
+  /* Initial position set via JavaScript */
 }
 
 /* Responsive Design */
