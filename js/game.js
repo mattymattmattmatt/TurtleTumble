@@ -200,6 +200,9 @@ function createGame() {
 
         // Listen for Player 2 joining
         listenForPlayer2();
+
+        // Listen for score and timer updates
+        listenForScoreAndTimer();
       });
     }
   }).catch((error) => {
@@ -217,7 +220,7 @@ function listenForPlayer2() {
       waitingMessage.textContent = "Player 2 has joined! Click 'Start Game' to begin.";
       // Show the Start Game button
       startButton.parentElement.style.display = 'block';
-      
+
       // Initialize Player 2's Position
       initializePlayerPosition('player2');
     }
@@ -262,6 +265,9 @@ function joinGame() {
 
         // Listen for game start
         listenForGameStart();
+
+        // Listen for score and timer updates
+        listenForScoreAndTimer();
       }
     }
   }).catch((error) => {
@@ -281,11 +287,46 @@ function listenForGameStart() {
       timerDisplay.style.display = 'block';
       disconnectButtonContainer.style.display = 'block';
       gameStarted = true;
-      
+
       // Start listening for player movements
       listenForPlayerMovements();
     }
   });
+}
+
+// Function to Listen for Score and Timer Updates
+function listenForScoreAndTimer() {
+  const scoreRef = ref(db, `games/${gamePassword}/score`);
+  const timerRef = ref(db, `games/${gamePassword}/timer`);
+
+  // Listen for score updates
+  onValue(scoreRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      player1Falls = data.player1;
+      player2Falls = data.player2;
+      updateScoreUI();
+    }
+  });
+
+  // Listen for timer updates
+  onValue(timerRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      const timeLeft = data.timer;
+      updateTimerUI(timeLeft);
+    }
+  });
+}
+
+// Function to Update Score UI
+function updateScoreUI() {
+  scoreDisplay.textContent = `Score - Player 1: ${player1Falls} | Player 2: ${player2Falls}`;
+}
+
+// Function to Update Timer UI
+function updateTimerUI(timeLeft) {
+  timerDisplay.textContent = `Time Left: ${formatTime(timeLeft)}`;
 }
 
 // Function to Listen for Player Movements
@@ -318,18 +359,18 @@ function listenForPlayerMovements() {
 function initializePlayerPosition(player) {
   const island = document.getElementById('island');
   const game = document.getElementById('game');
-  
+
   // Calculate the island's center relative to the game container
   const gameRect = game.getBoundingClientRect();
   const islandRect = island.getBoundingClientRect();
-  
+
   const islandCenterX = (gameRect.width / 2) - (islandRect.width / 2);
   const islandCenterY = (gameRect.height / 2) - (islandRect.height / 2);
-  
+
   // Define predefined positions relative to the island's center
   const offsetDistance = 80; // Increased distance for better spacing
   let initialX, initialY;
-  
+
   if (player === 'player1') {
     initialX = islandCenterX - offsetDistance; // Position Player 1 to the left
     initialY = islandCenterY;
@@ -337,15 +378,15 @@ function initializePlayerPosition(player) {
     initialX = islandCenterX + offsetDistance; // Position Player 2 to the right
     initialY = islandCenterY;
   }
-  
+
   // Ensure positions are numerical and not NaN
   initialX = isNaN(initialX) ? (gameRect.width / 2 - offsetDistance) : initialX;
   initialY = isNaN(initialY) ? (gameRect.height / 2) : initialY;
-  
+
   const playerElement = document.getElementById(player);
   playerElement.style.left = `${initialX}px`;
   playerElement.style.top = `${initialY}px`;
-  
+
   // Update Firebase with initial position
   update(ref(db, `games/${gamePassword}/${player}`), {
     x: initialX,
@@ -360,7 +401,7 @@ function initializePlayerPosition(player) {
       waitingMessage.textContent = "Waiting for the host to start the game...";
     }
   });
-  
+
   // Hide join/create containers and show waiting message
   passwordContainer.style.display = 'none';
   joinContainer.style.display = 'none';
@@ -417,7 +458,7 @@ function startGame() {
     // Start the timer
     startTimer();
     gameStarted = true;
-    
+
     // Start listening for player movements
     listenForPlayerMovements();
   }).catch((error) => {
@@ -429,6 +470,11 @@ function startGame() {
 function startTimer(initialTime = 120) {
   let timeLeft = initialTime;
   timerDisplay.textContent = `Time Left: ${formatTime(timeLeft)}`;
+
+  // Update Firebase timer initially
+  update(ref(db, `games/${gamePassword}/timer`), {
+    timer: timeLeft
+  });
 
   timerInterval = setInterval(() => {
     timeLeft--;
