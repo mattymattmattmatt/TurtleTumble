@@ -1,0 +1,73 @@
+/* Set the overall game background */
+#background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('../images/background.png'); /* Background image */
+  background-size: cover;
+  z-index: -1; /* Keeps the background behind other elements */
+}
+
+/* Island (platform) in the center */
+#island {
+  position: absolute;
+  width: 400px;  /* Island size */
+  height: 400px;
+  background-image: url('../images/island.png'); /* Island image */
+  background-size: contain;
+  z-index: 0;
+  border-radius: 50%;  /* Circle shape */
+}
+
+/* Shark animation */
+.shark {
+  position: absolute;
+  bottom: 10px;
+  width: 100px; /* Shark size */
+  height: auto;
+  background-image: url('../images/shark.png'); /* Shark image */
+  background-size: contain;
+  animation: swim 5s linear infinite;
+}
+
+/* Animation for sharks swimming */
+@keyframes swim {
+  0% {
+    left: -100px;
+  }
+  100% {
+    left: 100vw;
+  }
+}
+
+/* Turtle Shells (Players) */
+.turtle {
+  position: absolute;
+  width: 80px; /* Turtle shell size */
+  height: 80px;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+#player1 {
+  background-image: url('../images/player1_shell.png'); /* Player 1 shell image */
+  top: 50%;
+  left: 30%;
+}
+
+#player2 {
+  background-image: url('../images/player2_shell.png'); /* Player 2 shell image */
+  top: 50%;
+  left: 70%;
+}
+
+/* Score and Timer */
+#score, #timer {
+  font-size: 20px;
+  color: white;
+  position: absolute;
+  top: 10px;
+  z-index: 1;
+}

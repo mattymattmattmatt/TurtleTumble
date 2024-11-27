@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Turtle Tumble</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div id="game">
+    <div id="background"></div> <!-- Background Image -->
+    <div id="island"></div> <!-- Island Image -->
+
+    <div id="score" style="display:none;">Score: Player 1 - 0, Player 2 - 0</div>
+    <div id="timer" style="display:none;">Time Left: 2:00</div>
+    <button id="startButton" onclick="startGame()" style="display:none;">Start Game</button>
+
+    <div id="player1" class="turtle"></div> <!-- Player 1's Turtle Shell -->
+    <div id="player2" class="turtle"></div> <!-- Player 2's Turtle Shell -->
+
+    <!-- Shark Images -->
+    <div class="shark" style="animation-delay: 1s; left: -100px;"></div>
+    <div class="shark" style="animation-delay: 2s; left: -200px;"></div>
+    <div class="shark" style="animation-delay: 3s; left: -300px;"></div>
+  </div>
+
+  <script type="module" src="js/game.js"></script>
+
+</body>
+</html>
