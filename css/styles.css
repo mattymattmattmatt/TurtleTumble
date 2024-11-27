@@ -84,21 +84,21 @@ body {
   height: 32px; /* 60% smaller than the original size */
   background-size: contain;
   background-repeat: no-repeat;
-  transition: all 0.3s ease-in-out; /* Smooth transition for movements */
+  transition: all 0.1s ease-in-out; /* Smooth transition for movements */
 }
 
 #player1 {
   background-image: url('../images/player1_shell.png'); /* Player 1 shell image */
   top: 50%; /* Position on the island */
   left: 50%; /* Position on the island */
-  transform: translate(-60%, -50%); /* Center the turtle shell on the island */
+  transform: translate(-60%, -50%); /* Offset to position on the island */
 }
 
 #player2 {
   background-image: url('../images/player2_shell.png'); /* Player 2 shell image */
   top: 50%; /* Position on the island */
   left: 50%; /* Position on the island */
-  transform: translate(60%, -50%); /* Position the second turtle shell slightly apart */
+  transform: translate(60%, -50%); /* Offset to position on the island */
 }
 
 /* Score and Timer */
@@ -114,24 +114,37 @@ body {
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
 }
 
+/* Positioning Score and Timer */
+#score {
+  left: 10px;
+}
+
+#timer {
+  right: 10px;
+}
+
 /* Button Styles */
-#start-button-container, #password-container {
+#password-container, #join-container, #start-button-container, #disconnect-button-container {
   position: absolute;
-  top: 60%;
+  top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   text-align: center;
 }
 
-#startButton, #password-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
+#password-container h2, #join-container h2 {
+  margin-bottom: 10px;
 }
 
-#start-game-button, #join-button {
-  margin-top: 10px;
+#password, #join-password {
+  padding: 10px;
+  width: 200px;
+  border: none;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+#create-button, #join-button, #start-game-button, #disconnect-button {
   padding: 10px 20px;
   font-size: 18px;
   font-weight: bold;
@@ -144,8 +157,15 @@ body {
   transition: background-color 0.3s ease;
 }
 
-#start-game-button:hover, #join-button:hover {
+#create-button:hover, #join-button:hover, #start-game-button:hover, #disconnect-button:hover {
   background-color: #45a049;
+}
+
+/* Disconnect Button Position */
+#disconnect-button-container {
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 /* Waiting for players */
@@ -179,8 +199,13 @@ body {
     padding: 4px 8px;
   }
 
-  #start-game-button, #join-button {
+  #create-button, #join-button, #start-game-button, #disconnect-button {
     font-size: 16px;
     padding: 8px 16px;
+    width: 150px;
+  }
+
+  #password, #join-password {
+    width: 150px;
   }
 }

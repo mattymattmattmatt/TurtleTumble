@@ -14,8 +14,15 @@
 
     <!-- Password Entry -->
     <div id="password-container">
-      <input type="text" id="password" placeholder="Enter password" />
-      <button id="join-button">Join Game</button>
+      <h2>Turtle Tumble</h2>
+      <div>
+        <button id="create-game-button">Create Game</button>
+        <button id="join-game-button">Join Game</button>
+      </div>
+      <div id="password-input-container" style="display:none; margin-top: 10px;">
+        <input type="text" id="password" placeholder="Enter password" />
+        <button id="submit-password-button">Submit</button>
+      </div>
     </div>
 
     <!-- Waiting for other player -->
@@ -38,6 +45,12 @@
     <div class="shark" style="animation-delay: 1s;"></div>
     <div class="shark" style="animation-delay: 2s;"></div>
     <div class="shark" style="animation-delay: 3s;"></div>
+
+    <!-- Disconnect Button -->
+    <div id="disconnect-button-container" style="display:none;">
+      <button id="disconnect-button">Disconnect</button>
+    </div>
+
   </div>
 
   <!-- Firebase SDKs -->
