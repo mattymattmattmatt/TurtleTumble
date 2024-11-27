@@ -1,41 +1,72 @@
-/* Set the overall game background */
+/* Global Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #2b87c6; /* Sky blue color for a clean backdrop */
+  font-family: 'Arial', sans-serif;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  color: white;
+}
+
+#game {
+  position: relative;
+  width: 90vw;
+  height: 90vh;
+  overflow: hidden;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0.3) 70%); /* Gradient background for the main game area */
+  border-radius: 15px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+}
+
+/* Background Image */
 #background {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: url('../images/background.png'); /* Background image */
+  background-image: url('../images/background.png'); /* Add your background image */
   background-size: cover;
-  z-index: -1; /* Keeps the background behind other elements */
+  background-position: center;
+  filter: blur(5px); /* Adding blur to background to make foreground stand out */
+  z-index: -1;
 }
 
 /* Island (platform) in the center */
 #island {
   position: absolute;
-  width: 400px;  /* Island size */
+  width: 400px;
   height: 400px;
-  background-image: url('../images/island.png'); /* Island image */
+  background-image: url('../images/island.png');
   background-size: contain;
   z-index: 0;
-  border-radius: 50%;  /* Circle shape */
+  border-radius: 50%; /* Circular island */
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);  /* Center the island */
+  transform: translate(-50%, -50%); /* Centering the island */
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+  border: 5px solid #fff; /* White border to highlight the island */
 }
 
 /* Shark animation */
 .shark {
   position: absolute;
   bottom: 10px;
-  width: 100px; /* Shark size */
+  width: 100px;
   height: auto;
-  background-image: url('../images/shark.png'); /* Shark image */
+  background-image: url('../images/shark.png');
   background-size: contain;
   animation: swim 5s linear infinite;
 }
 
-/* Animation for sharks swimming */
 @keyframes swim {
   0% {
     left: -100px;
@@ -48,34 +79,104 @@
 /* Turtle Shells (Players) */
 .turtle {
   position: absolute;
-  width: 80px; /* Turtle shell size */
+  width: 80px;
   height: 80px;
   background-size: contain;
   background-repeat: no-repeat;
+  transition: all 0.3s ease-in-out; /* Smooth transition for movements */
 }
 
 #player1 {
-  background-image: url('../images/player1_shell.png'); /* Player 1 shell image */
+  background-image: url('../images/player1_shell.png');
   top: 50%;
   left: 30%;
 }
 
 #player2 {
-  background-image: url('../images/player2_shell.png'); /* Player 2 shell image */
+  background-image: url('../images/player2_shell.png');
   top: 50%;
   left: 70%;
 }
 
 /* Score and Timer */
 #score, #timer {
-  font-size: 20px;
-  color: white;
+  font-size: 25px;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
   position: absolute;
   top: 10px;
   z-index: 1;
+  padding: 5px 10px;
+  background-color: rgba(0, 0, 0, 0.6);
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
 }
 
+/* Button Styles */
 #startButton {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   margin-top: 20px;
-  font-size: 18px;
+  font-size: 20px;
+  font-weight: bold;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 15px 40px;
+  cursor: pointer;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+  transition: background-color 0.3s ease;
+}
+
+#startButton:hover {
+  background-color: #45a049;
+}
+
+button {
+  padding: 10px 15px;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  border-radius: 10px;
+  background-color: #008CBA;
+  color: white;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #007B8C;
+}
+
+/* Waiting for players */
+#waiting-message {
+  font-size: 22px;
+  color: white;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+  font-weight: bold;
+  display: none;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+  #game {
+    width: 95vw;
+    height: 95vh;
+  }
+  
+  #island {
+    width: 300px;
+    height: 300px;
+  }
+
+  .turtle {
+    width: 60px;
+    height: 60px;
+  }
+
+  #score, #timer {
+    font-size: 18px;
+    padding: 4px 8px;
+  }
 }

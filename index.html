@@ -12,9 +12,19 @@
     <div id="background"></div> <!-- Background Image -->
     <div id="island"></div> <!-- Island Image -->
 
+    <div id="password-container">
+      <input type="password" id="password" placeholder="Enter password" />
+      <button onclick="authenticate()">Join Game</button>
+    </div>
+
+    <div id="waiting-message" style="display:none;">Waiting for other player to join...</div>
+
+    <div id="startButton" style="display:none;">
+      <button onclick="startGame()">Start Game</button>
+    </div>
+
     <div id="score" style="display:none;">Score: Player 1 - 0, Player 2 - 0</div>
     <div id="timer" style="display:none;">Time Left: 2:00</div>
-    <button id="startButton" onclick="startGame()" style="display:none;">Start Game</button>
 
     <div id="player1" class="turtle"></div> <!-- Player 1's Turtle Shell -->
     <div id="player2" class="turtle"></div> <!-- Player 2's Turtle Shell -->
